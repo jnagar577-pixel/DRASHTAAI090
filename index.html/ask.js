@@ -297,8 +297,30 @@ async function healthCheck(c) {
       database = `error (HTTP ${e.status || 'unknown'})`;
     }
   }
+  // Groq key check: sirf status, koi response body nahi
+  let groq = 'skipped (DRASHTA_API missing)';
+  if (env.DRASHTA_API) {
+    try {
+      const r = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { Authorization: `Bearer ${c.groqKey}` },
+      });
+      groq = r.ok ? 'ok' : `error (HTTP ${r.status})`;
+    } catch {
+      groq = 'error (network)';
+    }
+  }
+  // Daily counter function check (test row, sirf health ke liye)
+  let rpc = 'skipped';
+  if (database === 'ok') {
+    try {
+      await sb(c, 'rpc/bump_usage', { method: 'POST', body: { p_hash: 'health_check', p_day: todayUTC() } });
+      rpc = 'ok';
+    } catch (e) {
+      rpc = `error (HTTP ${e.status || 'unknown'})`;
+    }
+  }
   const allEnv = Object.values(env).every(Boolean);
-  return { ok: allEnv && database === 'ok', env, database };
+  return { ok: allEnv && database === 'ok' && groq === 'ok' && rpc === 'ok', env, database, groq, rpc };
 }
 
 /* ---------- Entry point ---------- */

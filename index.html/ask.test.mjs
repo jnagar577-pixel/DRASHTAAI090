@@ -26,6 +26,7 @@ function reply(status, data) {
 globalThis.fetch = async (url, opts = {}) => {
   const u = new URL(url);
   if (u.hostname === 'api.groq.com') {
+    if (u.pathname.endsWith('/models')) return reply(200, { data: [{ id: 'openai/gpt-oss-120b' }] });
     const body = JSON.parse(opts.body);
     groqCalls.push(body);
     if (groqRule && groqRule(body.model) === 'notfound') {
@@ -248,6 +249,8 @@ test('health check reports env presence without leaking values', async () => {
   assert.equal(res.code, 200);
   assert.deepEqual(res.body.env, { SUPABASE_URL: true, SUPABASE_SERVICE_ROLE_KEY: true, DRASHTA_API: true });
   assert.equal(res.body.database, 'ok');
+  assert.equal(res.body.groq, 'ok');
+  assert.equal(res.body.rpc, 'ok');
   assert.equal(res.body.ok, true);
   const dump = JSON.stringify(res.body);
   assert.ok(!dump.includes('gsk_test') && !dump.includes('svc_test') && !dump.includes('supa.test'));
