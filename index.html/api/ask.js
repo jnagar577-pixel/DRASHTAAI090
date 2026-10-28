@@ -1,6 +1,6 @@
 // api/ask.js
-// Yeh Vercel serverless function hai — API key yahan kabhi hardcode nahi hoti.
-// Groq key Vercel dashboard ke GROQ_API_KEY environment variable se aati hai.
+// Yeh Vercel serverless function hai — Groq API key yahan kabhi likhi nahi jaati.
+// Key Vercel dashboard me "Environment Variable" (DRASHTA_API) ki tarah set hoti hai.
 
 const SYSTEM_PROMPT = `Tum "Drashta AI" ho — Swami Atma Jagran (swamiatmajagran.in) ke AI Vedic astrology aur spiritual guidance assistant. Tumhare banane wale Jatin Nagar hain, ek Osho "Zorba the Buddha" sanyasi aur 3+ saal se practicing Vedic astrologer.
 
@@ -48,10 +48,13 @@ export default async function handler(req, res) {
   const { name, reportType, chartData, query } = req.body || {};
   if (!query) return res.status(400).json({ error: 'query zaroori hai' });
 
+  // Groq key: DRASHTA_API ya GROQ_API_KEY, jo bhi Vercel mein set ho
   const apiKey = (process.env.DRASHTA_API || process.env.GROQ_API_KEY || '').trim();
-  if (!apiKey) return res.status(500).json({ error: 'Server par DRASHTA_API ya GROQ_API_KEY set nahi hai' });
+  if (!apiKey) return res.status(500).json({ error: 'Server par Groq API key (DRASHTA_API) set nahi hai' });
 
-  const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
+  // Primary model (env se) + fallback chain. Sirf wahi models jo Groq par abhi active hain.
+  const primaryModel = (process.env.GROQ_MODEL || 'openai/gpt-oss-20b').trim();
+  const models = [...new Set([primaryModel, 'openai/gpt-oss-20b', 'openai/gpt-oss-120b'])];
 
   let contextBlock;
   if (query === '__CHART_CONFIRM__') {
@@ -60,43 +63,56 @@ export default async function handler(req, res) {
     contextBlock = `User ka naam: ${name || 'batayi nahi'}\nReport type: ${reportType || 'batayi nahi'}\nChart/Maya Sutra data:\n${chartData || '(abhi nahi diya gaya)'}\n\nUser ka sawal: ${query}`;
   }
 
-  try {
-    const r = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: (process.env.GROQ_MODEL || 'llama-3.1-8b-instant').trim(),
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: contextBlock }
-        ],
-        stream: false,
-        temperature: 0.7
-      })
-    });
+  let lastError = 'Model se jawab nahi mila';
 
-    const data = await r.json().catch(() => ({}));
+  for (const model of models) {
+    const body = {
+      model,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: contextBlock }
+      ],
+      temperature: 0.7,
+      max_completion_tokens: 4096
+    };
+    // gpt-oss models reasoning karte hain; low se jawab tez aata hai aur tokens bachte hain
+    if (model.startsWith('openai/gpt-oss')) body.reasoning_effort = 'low';
 
-    if (!r.ok) {
-      console.error('Groq HTTP error:', r.status, JSON.stringify(data));
-      return res.status(502).json({
-        error: `Groq error ${r.status}: ${data?.error?.message || 'unknown'}`
+    try {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(body)
       });
+
+      const data = await r.json().catch(() => ({}));
+
+      if (!r.ok) {
+        const msg = data?.error?.message || 'unknown';
+        console.error(`Groq error (${model}):`, r.status, msg);
+        lastError = `Groq error ${r.status} (${model}): ${msg}`;
+        // Model band/galat ho to agla model try karein; key ya request ki galti par ruk jayein
+        if (r.status === 404 || (r.status === 400 && /model/i.test(msg))) continue;
+        if (r.status === 401 || r.status === 403) break;
+        return res.status(502).json({ error: lastError });
+      }
+
+      const text = (data?.choices?.[0]?.message?.content || '').trim();
+      if (!text) {
+        lastError = `Model (${model}) ne khaali jawab diya`;
+        console.error(lastError, JSON.stringify(data));
+        continue;
+      }
+
+      return res.status(200).json({ text });
+    } catch (err) {
+      console.error('Fetch failed:', err);
+      lastError = 'Server error: ' + String(err);
     }
-
-    const text = data?.choices?.[0]?.message?.content?.trim() || '';
-
-    if (!text) {
-      console.error('Groq empty response:', JSON.stringify(data));
-      return res.status(502).json({ error: 'Model ne khaali jawab diya' });
-    }
-
-    return res.status(200).json({ text });
-  } catch (err) {
-    console.error('Fetch failed:', err);
-    return res.status(500).json({ error: 'Server error: ' + String(err) });
   }
+
+  return res.status(502).json({ error: lastError });
 }
