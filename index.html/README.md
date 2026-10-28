@@ -84,3 +84,9 @@ Ye JSON dikhayega, jaise:
 Har ek ke liye **Production** tick hona chahiye. Variable badalne ke baad **Redeploy** (cache off) zaroor karein.
 
 **Step 3: Supabase.** `supabase/schema.sql` SQL Editor mein chal chuka hona chahiye. Health check mein `database: ok` aana chahiye.
+
+## Health check ka matlab (v5)
+`/api/ask` (GET) ab 3 cheezein check karta hai: env variables, Supabase database (`conversations` table), aur Groq key (`groq: ok`). `rpc: ok` ka matlab `bump_usage` function kaam kar raha hai. Koi bhi `ok` nahi hai to `ok: false` aayega aur wajah field mein dikhegi.
+
+## Debug mode
+Vercel mein `DEBUG_ERRORS` = `1` set karke redeploy karein. Tab chat mein error ke saath asli wajah `[debug: ...]` mein dikhegi. Problem solve hone par `DEBUG_ERRORS` hata dein.

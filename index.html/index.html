@@ -259,7 +259,7 @@ async function api(payload){
   if(!res.ok){
     const err = new Error(data.error || 'Abhi thodi dikkat aa rahi hai 🙏');
     err.status = res.status;
-    if(data.detail) console.error('Server detail:', data.detail);
+    if(data.detail){ console.error('Server detail:', data.detail); err.message += ' [debug: ' + data.detail + ']'; }
     throw err;
   }
   return data;

@@ -99,7 +99,9 @@ function todayUTC() {
 
 /* ---------- Supabase (REST, service key ke saath) ---------- */
 async function sb(c, path, { method = 'GET', body, prefer } = {}) {
-  const headers = { apikey: c.supaKey, Authorization: `Bearer ${c.supaKey}` };
+  const headers = { apikey: c.supaKey };
+  // Legacy JWT service key (eyJ...) Bearer mein bhi jaati hai. Naya sb_secret_ key sirf apikey header mein.
+  if (c.supaKey.startsWith('eyJ')) headers.Authorization = `Bearer ${c.supaKey}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (prefer) headers.Prefer = prefer;
   const r = await fetch(`${c.supaUrl}/rest/v1/${path}`, {
@@ -278,11 +280,55 @@ async function handleDelete(c, hash) {
   return { ok: true };
 }
 
+/* ---------- Health check (GET /api/ask) ---------- */
+// Sirf true/false aur status dikhata hai. Koi key ya URL value kabhi response mein nahi jaati.
+async function healthCheck(c) {
+  const env = {
+    SUPABASE_URL: Boolean(c.supaUrl),
+    SUPABASE_SERVICE_ROLE_KEY: Boolean(c.supaKey),
+    DRASHTA_API: Boolean(c.groqKey),
+  };
+  let database = 'skipped (Supabase env missing)';
+  if (env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      await sb(c, 'conversations?select=id&limit=1');
+      database = 'ok';
+    } catch (e) {
+      database = `error (HTTP ${e.status || 'unknown'})`;
+    }
+  }
+  // Groq key check: sirf status, koi response body nahi
+  let groq = 'skipped (DRASHTA_API missing)';
+  if (env.DRASHTA_API) {
+    try {
+      const r = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: { Authorization: `Bearer ${c.groqKey}` },
+      });
+      groq = r.ok ? 'ok' : `error (HTTP ${r.status})`;
+    } catch {
+      groq = 'error (network)';
+    }
+  }
+  // Daily counter function check (test row, sirf health ke liye)
+  let rpc = 'skipped';
+  if (database === 'ok') {
+    try {
+      await sb(c, 'rpc/bump_usage', { method: 'POST', body: { p_hash: 'health_check', p_day: todayUTC() } });
+      rpc = 'ok';
+    } catch (e) {
+      rpc = `error (HTTP ${e.status || 'unknown'})`;
+    }
+  }
+  const allEnv = Object.values(env).every(Boolean);
+  return { ok: allEnv && database === 'ok' && groq === 'ok' && rpc === 'ok', env, database, groq, rpc };
+}
+
 /* ---------- Entry point ---------- */
 export default async function handler(req, res) {
   const c = cfg();
   setCors(req, res, c);
   if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method === 'GET') return res.status(200).json(await healthCheck(c));
   if (req.method !== 'POST') return send(res, 405, 'Sirf POST allowed hai');
 
   if (!c.supaUrl || !c.supaKey) {

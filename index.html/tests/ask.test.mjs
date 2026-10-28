@@ -11,7 +11,7 @@ delete process.env.GROQ_MODEL;
 
 const { default: handler } = await import('../api/ask.js');
 
-let db, groqCalls, groqRule, bumpOverride;
+let db, groqCalls, groqRule, bumpOverride, lastSupaHeaders;
 
 function reset() {
   db = { conversations: [], messages: [], feedback: [], usage: new Map(), nextId: 1 };
@@ -26,6 +26,7 @@ function reply(status, data) {
 globalThis.fetch = async (url, opts = {}) => {
   const u = new URL(url);
   if (u.hostname === 'api.groq.com') {
+    if (u.pathname.endsWith('/models')) return reply(200, { data: [{ id: 'openai/gpt-oss-120b' }] });
     const body = JSON.parse(opts.body);
     groqCalls.push(body);
     if (groqRule && groqRule(body.model) === 'notfound') {
@@ -35,6 +36,7 @@ globalThis.fetch = async (url, opts = {}) => {
   }
 
   const path = u.pathname.replace('/rest/v1/', '');
+  lastSupaHeaders = opts.headers;
   const method = opts.method || 'GET';
   const body = opts.body ? JSON.parse(opts.body) : null;
   const eq = k => { const v = u.searchParams.get(k); return v && v.startsWith('eq.') ? v.slice(3) : null; };
@@ -224,4 +226,42 @@ test('upstream failure gives friendly message, not raw error', async () => {
   const r = await call({ token: TOKEN_A, action: 'chat', query: 'Test' });
   assert.equal(r.code, 502);
   assert.ok(!/Groq|Supabase/.test(r.body.error));
+});
+
+test('new sb_secret key is sent only as apikey, not as Bearer', async () => {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sb_secret_test_value';
+  await intake(TOKEN_A);
+  assert.equal(lastSupaHeaders.apikey, 'sb_secret_test_value');
+  assert.equal(lastSupaHeaders.Authorization, undefined);
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'svc_test';
+});
+
+test('legacy eyJ service key is sent as apikey and Bearer', async () => {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'eyJlegacy';
+  await intake(TOKEN_A);
+  assert.equal(lastSupaHeaders.Authorization, 'Bearer eyJlegacy');
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'svc_test';
+});
+
+test('health check reports env presence without leaking values', async () => {
+  const res = mockRes();
+  await handler({ method: 'GET', headers: {}, body: null }, res);
+  assert.equal(res.code, 200);
+  assert.deepEqual(res.body.env, { SUPABASE_URL: true, SUPABASE_SERVICE_ROLE_KEY: true, DRASHTA_API: true });
+  assert.equal(res.body.database, 'ok');
+  assert.equal(res.body.groq, 'ok');
+  assert.equal(res.body.rpc, 'ok');
+  assert.equal(res.body.ok, true);
+  const dump = JSON.stringify(res.body);
+  assert.ok(!dump.includes('gsk_test') && !dump.includes('svc_test') && !dump.includes('supa.test'));
+});
+
+test('health check flags missing Supabase env', async () => {
+  const saved = process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_URL;
+  const res = mockRes();
+  await handler({ method: 'GET', headers: {}, body: null }, res);
+  process.env.SUPABASE_URL = saved;
+  assert.equal(res.body.env.SUPABASE_URL, false);
+  assert.equal(res.body.ok, false);
 });
