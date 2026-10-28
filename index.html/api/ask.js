@@ -38,7 +38,6 @@ DELIVERY & PROCESS: Reports payment ke baad 24 ghante ke andar customer ke Whats
 AGAR USER IN CHEEZON KE BAARE MEIN POOCHHE (Swami Atma Jagran kaun hain, koi product/report kya hai, pricing kya hai, consultation kaise book karein): seedha, warmly, isi gyaan-aadhar se poora jawab do — chart ki zaroorat nahi hai is tarah ke sawal ke liye, "pehle chart dijiye" mat kahna. Agar koi bahut specific/badal sakne wali cheez poochhe (jaise exact offer ya naya launch), to bhi upar di gayi jaankari confidently do, aur sirf itna jod do ki latest updates swamiatmajagran.in par bhi dekh sakte hain.`;
 
 export default async function handler(req, res) {
-  // Apne live domain ko allow kijiye (abhi * rakha hai testing ke liye)
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -47,17 +46,13 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Sirf POST allowed hai' });
 
   const { name, reportType, chartData, query } = req.body || {};
-  if (!query) {
-    return res.status(400).json({ error: 'query zaroori hai' });
-  }
+  if (!query) return res.status(400).json({ error: 'query zaroori hai' });
 
-  const apiKey = process.env.DRASHTA_API;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Server par DRASHTA_API set nahi hai' });
-  }
+  const apiKey = (process.env.DRASHTA_API || '').trim();
+  if (!apiKey) return res.status(500).json({ error: 'Server par DRASHTA_API set nahi hai' });
 
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const model = (process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim();
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
   let contextBlock;
   if (query === '__CHART_CONFIRM__') {
@@ -69,17 +64,40 @@ export default async function handler(req, res) {
   try {
     const r = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': apiKey
+      },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: contextBlock }] }],
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] }
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 }
       })
     });
-    const data = await r.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) return res.status(502).json({ error: 'Model se jawab nahi mila', detail: data });
+
+    const data = await r.json().catch(() => ({}));
+
+    if (!r.ok) {
+      console.error('Gemini HTTP error:', r.status, JSON.stringify(data));
+      return res.status(502).json({
+        error: `Gemini error ${r.status}: ${data?.error?.message || 'unknown'}`
+      });
+    }
+
+    const text = (data?.candidates?.[0]?.content?.parts || [])
+      .map(p => p.text || '')
+      .join('')
+      .trim();
+
+    if (!text) {
+      const reason = data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || 'unknown';
+      console.error('Gemini empty response:', JSON.stringify(data));
+      return res.status(502).json({ error: `Model ne khaali jawab diya (reason: ${reason})` });
+    }
+
     return res.status(200).json({ text });
   } catch (err) {
-    return res.status(500).json({ error: 'Server error', detail: String(err) });
+    console.error('Fetch failed:', err);
+    return res.status(500).json({ error: 'Server error: ' + String(err) });
   }
 }
