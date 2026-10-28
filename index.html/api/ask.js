@@ -50,13 +50,15 @@ const RASHIS = ['मेष','वृषभ','मिथुन','कर्क','स
 const LIMITS = { name: 100, dob: 10, birth_time: 5, birth_place: 150, notes: 8000, query: 1000, rashi: 20 };
 const DAILY_LIMIT = 100;
 const HISTORY_TURNS = 10;
-const DEFAULT_MODEL = 'openai/gpt-oss-120b';
-const FALLBACK_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
-const BUSY_MSG = 'Abhi jawab taiyar karne mein thodi der lag rahi hai 🙏 Kripya kuch der baad phir koshish karein.';
+const DEFAULT_MODEL = 'llama-3.1-8b-instant';
+const FALLBACK_MODELS = ['llama-3.1-8b-instant', 'llama3-70b-8192'];
+const BUSY_MSG = 'Abhi jawab taiyar karne mein thodi der lag rahi hai. Kripya kuch der baad phir koshish karein.';
 
 class HttpError extends Error {
-  constructor(status, message) { super(message); this.status = status; }
+  constructor(status, message, code = 'UNKNOWN', detail = '') { super(message); this.status = status; this.code = code; this.detail = detail; }
 }
+function redacted(value) { return String(value || '').replace(/(gsk_|sk-|sb_secret_|eyJ)[A-Za-z0-9._-]+/g, '$1[REDACTED]'); }
+function typed(status, code, message, detail = '') { return new HttpError(status, message, code, redacted(detail)); }
 
 function cfg() {
   const extra = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -75,13 +77,16 @@ function setCors(req, res, c) {
   if (origin && c.allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   }
 }
 
-function send(res, status, error, detail) {
-  return res.status(status).json(detail ? { error, detail } : { error });
+function send(res, status, error, code = '', detail = '') {
+  const suffix = code ? ` (code: ${code})` : '';
+  const body = { error: `${error}${suffix}` };
+  if (detail) body.detail = redacted(detail);
+  return res.status(status).json(body);
 }
 
 function cleanStr(v, max) {
@@ -99,7 +104,8 @@ function todayUTC() {
 
 /* ---------- Supabase (REST, service key ke saath) ---------- */
 async function sb(c, path, { method = 'GET', body, prefer } = {}) {
-  const headers = { apikey: c.supaKey, Authorization: `Bearer ${c.supaKey}` };
+  const headers = { apikey: c.supaKey };
+  if (c.supaKey.startsWith('eyJ')) headers.Authorization = `Bearer ${c.supaKey}`;
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   if (prefer) headers.Prefer = prefer;
   const r = await fetch(`${c.supaUrl}/rest/v1/${path}`, {
@@ -109,9 +115,9 @@ async function sb(c, path, { method = 'GET', body, prefer } = {}) {
   let data = null;
   if (raw) { try { data = JSON.parse(raw); } catch { data = raw; } }
   if (!r.ok) {
-    const err = new Error(`Supabase ${r.status}: ${typeof data === 'string' ? data : JSON.stringify(data)}`);
-    err.status = r.status;
-    throw err;
+    const rawMessage = typeof data === 'string' ? data : JSON.stringify(data);
+    const code = path.startsWith('rpc/') ? (r.status === 404 ? 'SUPABASE_FUNCTION_MISSING' : 'SUPABASE_UNAVAILABLE') : (r.status === 401 || r.status === 403 ? 'SUPABASE_AUTH' : r.status === 404 ? 'SUPABASE_TABLE_MISSING' : 'SUPABASE_UNAVAILABLE');
+    throw typed(502, code, code === 'SUPABASE_AUTH' ? 'Database authentication fail hui.' : 'Database service abhi available nahi hai.', rawMessage);
   }
   return data;
 }
@@ -182,11 +188,11 @@ async function callModel(c, messages) {
     const data = await r.json().catch(() => ({}));
     if (!r.ok) {
       const msg = data?.error?.message || 'unknown';
-      console.error(`Groq error (${model}):`, r.status, msg);
-      lastErr = new Error(`Groq ${r.status} (${model}): ${msg}`);
-      if (r.status === 404 || (r.status === 400 && /model/i.test(msg))) continue; // model band: agla try karo
-      if (r.status === 401 || r.status === 403) break;                              // key galat: aage mat jao
-      throw lastErr;
+      console.error(`Groq error code=${r.status === 401 || r.status === 403 ? 'GROQ_AUTH' : r.status === 429 ? 'GROQ_RATE_LIMIT' : r.status >= 500 ? 'GROQ_UNAVAILABLE' : 'GROQ_MODEL_MISSING'} status=${r.status}`);
+      if (r.status === 401 || r.status === 403) throw typed(502, 'GROQ_AUTH', 'Drashta AI ki authentication key accept nahi hui.', msg);
+      if (r.status === 429) throw typed(429, 'GROQ_RATE_LIMIT', 'Drashta AI par abhi bahut requests hain.', msg);
+      if (r.status === 404 || (r.status === 400 && /model/i.test(msg))) { lastErr = typed(502, 'GROQ_MODEL_MISSING', 'Drashta AI ka model abhi available nahi hai.', msg); continue; }
+      throw typed(502, 'GROQ_UNAVAILABLE', 'Drashta AI service abhi available nahi hai.', msg);
     }
     const text = (data?.choices?.[0]?.message?.content || '').trim();
     if (text) return text;
@@ -202,7 +208,8 @@ async function handleChat(c, hash, b) {
 
   const conv = await ensureConversation(c, hash);
 
-  const used = Number(await sb(c, 'rpc/bump_usage', { method: 'POST', body: { p_hash: hash, p_day: todayUTC() } }));
+  const usageRaw = await sb(c, 'rpc/bump_usage', { method: 'POST', body: { p_hash: hash, p_day: todayUTC() } });
+  const used = Number(Array.isArray(usageRaw) ? usageRaw[0] : usageRaw?.count ?? usageRaw);
   if (used > DAILY_LIMIT) {
     throw new HttpError(429, `Aaj ki ${DAILY_LIMIT} messages ki limit poori ho gayi hai 🙏 Kal phir baat kar sakte hain.`);
   }
@@ -283,15 +290,27 @@ export default async function handler(req, res) {
   const c = cfg();
   setCors(req, res, c);
   if (req.method === 'OPTIONS') return res.status(204).end();
+  if (req.method === 'GET') {
+    const checks = { env: { supabaseUrl: Boolean(c.supaUrl), supabaseKey: Boolean(c.supaKey), groqKey: Boolean(c.groqKey) }, supabase: { conversations: false, rpc: false }, groq: { models: false } };
+    const hints = [];
+    if (!c.supaUrl || !c.supaKey) hints.push('Supabase environment variables are missing.');
+    if (!c.groqKey) hints.push('Groq environment variable is missing.');
+    if (c.supaUrl && c.supaKey) {
+      try { await sb(c, 'conversations?select=id&limit=1'); checks.supabase.conversations = true; } catch { hints.push('Supabase conversations check failed.'); }
+      try { await sb(c, 'rpc/bump_usage', { method: 'POST', body: { p_hash: 'health-check', p_day: todayUTC() } }); checks.supabase.rpc = true; } catch { hints.push('Supabase rpc/bump_usage check failed.'); }
+    }
+    if (c.groqKey) { try { const r = await fetch('https://api.groq.com/openai/v1/models', { headers: { Authorization: `Bearer ${c.groqKey}` } }); checks.groq.models = r.ok; if (!r.ok) hints.push(`Groq models check returned HTTP ${r.status}.`); } catch { hints.push('Groq models check could not connect.'); } }
+    return res.status(200).json({ status: hints.length ? 'degraded' : 'ok', checks, hint: hints.length ? hints.join(' ') : 'All configured services responded successfully.' });
+  }
   if (req.method !== 'POST') return send(res, 405, 'Sirf POST allowed hai');
 
   if (!c.supaUrl || !c.supaKey) {
     console.error('SUPABASE_URL ya SUPABASE_SERVICE_ROLE_KEY set nahi hai');
-    return send(res, 500, 'Server setup adhoora hai. Kripya thodi der baad koshish karein.');
+    return send(res, 500, 'Server setup adhoora hai. Kripya thodi der baad koshish karein.', 'CONFIG_MISSING');
   }
   if (!c.groqKey) {
     console.error('DRASHTA_API (Groq key) set nahi hai');
-    return send(res, 500, 'Server setup adhoora hai. Kripya thodi der baad koshish karein.');
+    return send(res, 500, 'Server setup adhoora hai. Kripya thodi der baad koshish karein.', 'CONFIG_MISSING');
   }
 
   const b = req.body || {};
@@ -311,8 +330,8 @@ export default async function handler(req, res) {
     }
     return res.status(200).json(out);
   } catch (err) {
-    if (err instanceof HttpError) return send(res, err.status, err.message);
-    console.error('ask error:', err);
-    return send(res, 502, BUSY_MSG, c.debug ? String(err.message) : undefined);
+    if (err instanceof HttpError) return send(res, err.status, err.message, err.code, c.debug ? `HTTP ${err.status}: ${err.detail || err.message}` : '');
+    console.error('ask error code=UNKNOWN status=502');
+    return send(res, 502, BUSY_MSG, 'UNKNOWN', c.debug ? String(err?.message || err) : '');
   }
 }

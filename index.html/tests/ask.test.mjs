@@ -172,10 +172,10 @@ test('memory is isolated per token', async () => {
 });
 
 test('model 404 falls back to the next model', async () => {
-  groqRule = model => (model === 'openai/gpt-oss-120b' ? 'notfound' : 'ok');
+  groqRule = model => (model === 'llama-3.1-8b-instant' ? 'notfound' : 'ok');
   const r = await call({ token: TOKEN_A, action: 'chat', query: 'Test' });
   assert.equal(r.code, 200);
-  assert.equal(groqCalls.at(-1).model, 'openai/gpt-oss-20b');
+  assert.equal(groqCalls.at(-1).model, 'llama3-70b-8192');
 });
 
 test('daily limit returns 429', async () => {
