@@ -103,6 +103,19 @@ main{max-width:880px;margin:0 auto;padding:18px 18px 190px}
 .num-t{font-size:12px;color:var(--muted);line-height:1.5}
 .num-meta{font-size:11px;color:var(--faint);margin-top:8px}
 
+/* D1 CHART CARD */
+.chart-wrap{width:min(420px,88%);margin:-6px 0 14px 42px;padding:14px;border-radius:18px;background:linear-gradient(160deg,var(--glass2),var(--glass));border:1px solid var(--line);animation:fadeUp .5s ease both}
+@media(max-width:520px){.chart-wrap{margin-left:0;width:100%}}
+.chart-head{font-family:'Fraunces',Georgia,serif;font-size:15px;color:var(--gold-hi);margin-bottom:8px}
+.chart-svg svg{display:block;width:100%;height:auto}
+.chart-note{font-size:12px;color:var(--faint);margin:8px 0 10px;text-align:center}
+.chart-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.chart-actions button{background:var(--glass);border:1px solid var(--line);color:var(--cream);border-radius:999px;padding:7px 12px;font:inherit;font-size:12px;cursor:pointer;transition:background .2s,transform .2s}
+.chart-actions button:hover{background:var(--glass2);transform:translateY(-1px)}
+.chart-overlay{position:fixed;inset:0;z-index:50;background:rgba(8,6,4,.88);display:flex;align-items:center;justify-content:center;padding:16px;cursor:pointer;animation:fadeUp .3s ease both}
+.chart-full{background:var(--ink);border:1px solid var(--line);border-radius:20px;padding:16px;max-width:95vw}
+.chart-full svg{display:block;width:min(88vmin,560px);height:auto}
+
 /* INTAKE FORM */
 .intake{width:min(640px,94%)}
 .intake .hint{font-size:13px;color:var(--muted);margin:4px 0 12px}
@@ -412,6 +425,86 @@ function renderNumCard(n){
   scrollDown();
 }
 
+/* ---------- D1 CHART CARD (lagna + bhav; grah abhi nahi) ---------- */
+// Positions 400x400 box mein, North-Indian diamond ke 12 bhav (bhav 1 se 12)
+const CHART_HOUSE_POS = [[203,99],[105,69],[72,103],[105,197],[74,301],[105,325],[203,294],[300,328],[330,294],[305,197],[335,99],[305,69]];
+function chartSVG(lagan, size, forDownload){
+  const li = RASHIS.indexOf(lagan);
+  if(li < 0) return '';
+  const gold = '#e2b964', goldHi = '#f6dd9a', muted = '#b7a68a', bg = '#17120e';
+  let t = '';
+  for(let n = 0; n < 12; n++){
+    const [x, y] = CHART_HOUSE_POS[n];
+    const sign = RASHIS[(li + n) % 12];
+    if(n === 0) t += `<text x="${x}" y="${y - 18}" text-anchor="middle" font-size="11" fill="${gold}">लग्न</text>`;
+    t += `<text x="${x}" y="${y}" text-anchor="middle" font-size="14" fill="${goldHi}" font-family="Work Sans,Arial,sans-serif">${sign}</text>`;
+    t += `<text x="${x}" y="${y + 16}" text-anchor="middle" font-size="10" fill="${muted}">${n + 1}</text>`;
+  }
+  const bgRect = forDownload ? `<rect width="400" height="400" fill="${bg}"/>` : '';
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="${size}" height="${size}">`
+    + bgRect
+    + `<g fill="none" stroke="${gold}" stroke-width="1.6">`
+    + `<rect x="0" y="0" width="400" height="400"/>`
+    + `<line x1="0" y1="0" x2="400" y2="400"/><line x1="400" y1="0" x2="0" y2="400"/>`
+    + `<polygon points="200,0 400,200 200,400 0,200"/>`
+    + `</g>` + t + `</svg>`;
+  return svg;
+}
+function saveBlob(blob, fname){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fname;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+function chartFileName(name, ext){
+  const safe = String(name || 'kundli').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'kundli';
+  return `kundli-D1-${safe}.${ext}`;
+}
+function downloadChartSVG(lagan, name){
+  const svg = chartSVG(lagan, 800, true);
+  saveBlob(new Blob([svg], {type:'image/svg+xml'}), chartFileName(name, 'svg'));
+}
+function downloadChartPNG(lagan, name){
+  const svg = chartSVG(lagan, 800, true);
+  const url = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml'}));
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = 800; c.height = 800;
+    c.getContext('2d').drawImage(img, 0, 0, 800, 800);
+    c.toBlob(b => saveBlob(b, chartFileName(name, 'png')), 'image/png');
+    URL.revokeObjectURL(url);
+  };
+  img.src = url;
+}
+function openChartFull(lagan){
+  const ov = document.createElement('div');
+  ov.className = 'chart-overlay';
+  ov.innerHTML = `<div class="chart-full">${chartSVG(lagan, 'min(88vmin,560px)', false)}<p class="chart-note">Tap karke band karein</p></div>`;
+  ov.onclick = () => ov.remove();
+  document.body.appendChild(ov);
+}
+function renderChartCard(data){
+  if(!data || !data.lagan) return;
+  const row = document.createElement('div');
+  row.className = 'chart-wrap';
+  row.innerHTML = `
+    <div class="chart-head">लग्न कुंडली (D1) · ${escapeHTML(data.name)}</div>
+    <div class="chart-svg">${chartSVG(data.lagan, '100%', false)}</div>
+    <p class="chart-note">लग्न: ${escapeHTML(data.lagan)} · ग्रह स्थिति जल्द जुड़ेगी</p>
+    <div class="chart-actions">
+      <button type="button" data-act="view">🔍 बड़ा देखें</button>
+      <button type="button" data-act="png">⬇ PNG</button>
+      <button type="button" data-act="svg">⬇ SVG</button>
+    </div>`;
+  row.querySelector('[data-act="view"]').onclick = () => openChartFull(data.lagan);
+  row.querySelector('[data-act="png"]').onclick = () => downloadChartPNG(data.lagan, data.name);
+  row.querySelector('[data-act="svg"]').onclick = () => downloadChartSVG(data.lagan, data.name);
+  chatBox.appendChild(row);
+  scrollDown();
+}
+
 /* ---------- INTAKE FORM ---------- */
 function opts(list, selected=''){
   return '<option value="">Chunein</option>' + list.map(r => `<option value="${r}"${r===selected?' selected':''}>${r}</option>`).join('');
@@ -485,6 +578,7 @@ async function submitIntake(){
     addBot(msg);
     pushHistory('bot', msg);
     renderNumCard(r.numerology);
+    renderChartCard(v.data);
     setChips(['✓ Haan, sahi hai','✎ Kuch badalna hai'], label => {
       clearChips();
       if(label.startsWith('✓')){
