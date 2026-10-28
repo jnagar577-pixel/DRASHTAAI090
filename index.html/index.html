@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Drashta AI — Swami Atma Jagran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root,
+  body[data-theme="maroon-gold"]{
+    --bg:#1a1410;
+    --bg-soft:#231a13;
+    --panel:#2a1f17;
+    --saffron:#dd7a32;
+    --saffron-soft:rgba(221,122,50,0.14);
+    --maroon:#8c3a3a;
+    --brass:#c2a36b;
+    --cream:#f3e9d8;
+    --muted:#b3a494;
+    --line:rgba(194,163,107,0.18);
+    --glow1:rgba(221,122,50,0.10);
+    --glow2:rgba(140,58,58,0.12);
+    --radius:18px;
+  }
+  body[data-theme="gold-black"]{
+    --bg:#0c0a08;
+    --bg-soft:#151210;
+    --panel:#1c1814;
+    --saffron:#d4af37;
+    --saffron-soft:rgba(212,175,55,0.14);
+    --maroon:#4a3a1c;
+    --brass:#b8974f;
+    --cream:#f5ecd8;
+    --muted:#9c9080;
+    --line:rgba(184,151,79,0.2);
+    --glow1:rgba(212,175,55,0.09);
+    --glow2:rgba(74,58,28,0.18);
+  }
+  body[data-theme="deep-dark"]{
+    --bg:#0a0a0c;
+    --bg-soft:#131315;
+    --panel:#1a1a1d;
+    --saffron:#b08968;
+    --saffron-soft:rgba(176,137,104,0.14);
+    --maroon:#3a2a2a;
+    --brass:#8f8578;
+    --cream:#e8e4dc;
+    --muted:#827c74;
+    --line:rgba(143,133,120,0.18);
+    --glow1:rgba(176,137,104,0.07);
+    --glow2:rgba(58,42,42,0.15);
+  }
+  body[data-theme="blue-gold"]{
+    --bg:#0b1220;
+    --bg-soft:#101a2e;
+    --panel:#162238;
+    --saffron:#d4af37;
+    --saffron-soft:rgba(212,175,55,0.14);
+    --maroon:#1f3a5f;
+    --brass:#c9a227;
+    --cream:#eef2fb;
+    --muted:#8fa0bf;
+    --line:rgba(201,162,39,0.2);
+    --glow1:rgba(212,175,55,0.08);
+    --glow2:rgba(31,58,95,0.25);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(ellipse at 20% -10%, var(--glow1), transparent 55%),
+      radial-gradient(ellipse at 100% 110%, var(--glow2), transparent 50%),
+      var(--bg);
+    color:var(--cream);
+    transition:background .25s,color .25s;
+    font-family:'Work Sans',sans-serif;
+    display:flex;
+    flex-direction:column;
+    min-height:100%;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:var(--brass);border-radius:9999px;opacity:.5;}
+
+  /* ---------- HEADER ---------- */
+  header{
+    position:sticky;top:0;z-index:30;
+    padding:14px 18px;
+    padding-top:calc(14px + env(safe-area-inset-top,0px));
+    background:rgba(26,20,16,0.88);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .header-row{
+    max-width:640px;margin:0 auto;
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+  }
+  .brand{display:flex;align-items:center;gap:11px;}
+  .mark{
+    width:40px;height:40px;border-radius:50%;overflow:hidden;
+    background:radial-gradient(circle at 35% 30%, #f0a35e, var(--saffron) 65%, #a8551f 100%);
+    display:flex;align-items:center;justify-content:center;
+    font-size:19px;color:#1a1410;font-weight:600;
+    box-shadow:0 0 0 1px var(--line), 0 4px 14px rgba(221,122,50,0.25);
+    flex-shrink:0;
+  }
+  .brand-text h1{
+    font-family:'Fraunces',serif;font-weight:600;font-size:18px;
+    margin:0;letter-spacing:.2px;color:var(--cream);
+  }
+  .brand-text p{margin:1px 0 0;font-size:11.5px;color:var(--muted);}
+  .header-actions{display:flex;align-items:center;gap:6px;}
+  .icon-btn{
+    width:34px;height:34px;border-radius:50%;
+    border:1px solid var(--line);background:transparent;
+    color:var(--brass);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:background .15s,color .15s;font-size:14px;
+  }
+  .icon-btn:hover{background:var(--saffron-soft);color:var(--saffron);}
+
+  .limit-strip{
+    max-width:640px;margin:10px auto 0;padding:0 2px;
+    display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);
+  }
+  .limit-track{flex:1;height:3px;border-radius:3px;background:var(--line);overflow:hidden;}
+  .limit-fill{height:100%;background:var(--saffron);border-radius:3px;transition:width .3s;}
+
+  .theme-row{
+    max-width:640px;margin:10px auto 0;padding:0 2px;
+    display:none;gap:8px;
+  }
+  .theme-row.open{display:flex;}
+  .swatch{
+    width:26px;height:26px;border-radius:50%;cursor:pointer;
+    border:2px solid transparent;flex-shrink:0;
+  }
+  .swatch.active{border-color:var(--cream);}
+
+  /* ---------- MAIN ---------- */
+  main{flex:1;width:100%;max-width:640px;margin:0 auto;padding:16px;display:flex;flex-direction:column;}
+
+  #chatBox{flex:1;display:flex;flex-direction:column;gap:14px;padding:6px 2px 10px;}
+
+  .row{display:flex;gap:10px;align-items:flex-end;}
+  .row.user{justify-content:flex-end;}
+  .avatar-sm{
+    width:28px;height:28px;border-radius:50%;flex-shrink:0;
+    background:radial-gradient(circle at 35% 30%, #f0a35e, var(--saffron) 70%);
+    display:flex;align-items:center;justify-content:center;font-size:12px;color:#1a1410;
+  }
+  .bubble{
+    max-width:82%;
+    padding:12px 15px;
+    font-size:14.5px;line-height:1.62;
+    border:1px solid var(--line);
+    animation:rise .32s ease both;
+  }
+  .bubble.bot{
+    background:var(--panel);
+    border-radius:4px 16px 16px 16px;
+    color:var(--cream);
+  }
+  .bubble.user{
+    background:linear-gradient(160deg, rgba(221,122,50,0.22), rgba(140,58,58,0.18));
+    border-color:rgba(221,122,50,0.3);
+    border-radius:16px 4px 16px 16px;
+    color:#fbeedd;
+  }
+  .bubble b{color:var(--saffron);font-weight:600;}
+  .bubble ul{margin:6px 0;padding-left:18px;}
+  .bubble li{margin:3px 0;}
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .msg-actions{display:flex;gap:10px;margin-top:6px;padding-left:38px;}
+  .msg-actions button{
+    background:none;border:none;color:var(--muted);font-size:11px;
+    cursor:pointer;display:flex;align-items:center;gap:4px;padding:2px 0;
+  }
+  .msg-actions button:hover{color:var(--saffron);}
+
+  .thinking{display:flex;align-items:center;gap:10px;padding-left:2px;}
+  .diya{
+    width:28px;height:28px;border-radius:50%;flex-shrink:0;
+    background:radial-gradient(circle at 35% 30%, #f6b676, var(--saffron) 70%);
+    animation:breathe 1.6s ease-in-out infinite;
+  }
+  @keyframes breathe{0%,100%{box-shadow:0 0 0 0 rgba(221,122,50,.45);}50%{box-shadow:0 0 0 7px rgba(221,122,50,0);}}
+  .thinking span{font-size:12.5px;color:var(--muted);font-style:italic;}
+
+  /* chips */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 4px 38px;}
+  .chip{
+    padding:7px 13px;border-radius:999px;font-size:12.5px;
+    border:1px solid var(--line);background:rgba(243,233,216,0.03);
+    color:var(--cream);cursor:pointer;transition:border-color .15s,background .15s;
+  }
+  .chip:hover{border-color:var(--saffron);background:var(--saffron-soft);}
+  .chip.ghost{color:var(--muted);}
+
+  /* ---------- INPUT ---------- */
+  .composer-wrap{
+    position:sticky;bottom:0;
+    background:linear-gradient(to top, var(--bg) 60%, transparent);
+    padding-top:10px;
+  }
+  .composer{
+    max-width:640px;margin:0 auto;
+    background:var(--panel);border:1px solid var(--line);
+    border-radius:20px;padding:6px 6px 6px 16px;
+    display:flex;align-items:flex-end;gap:6px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.25);
+  }
+  .composer textarea{
+    flex:1;background:none;border:none;outline:none;resize:none;
+    color:var(--cream);font-family:inherit;font-size:14px;line-height:1.5;
+    padding:9px 0;max-height:120px;
+  }
+  .composer textarea::placeholder{color:var(--muted);}
+  .round-btn{
+    width:38px;height:38px;border-radius:50%;border:none;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+  }
+  #micBtn{background:transparent;color:var(--brass);}
+  #micBtn.listening{color:var(--maroon);animation:breathe 1s infinite;}
+  #sendBtn{background:var(--saffron);color:#1a1410;}
+  #sendBtn:disabled{opacity:.4;cursor:default;}
+
+  .footnote{
+    text-align:center;font-size:10.5px;color:var(--muted);
+    margin:10px auto 4px;max-width:640px;line-height:1.5;
+  }
+  .footnote a{color:var(--brass);text-decoration:none;}
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="brand">
+      <div class="mark">
+        <img src="logo.png" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"
+             onerror="this.remove(); document.getElementById('markFallback').style.display='flex';">
+        <span id="markFallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;">ॐ</span>
+      </div>
+      <div class="brand-text">
+        <h1>Drashta AI</h1>
+        <p>Swami Atma Jagran · Vedic margdarshan</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeBtn" title="Theme badlein">🎨</button>
+      <button class="icon-btn" id="newChatBtn" title="Nayi shuruaat">⟲</button>
+    </div>
+  </div>
+  <div class="limit-strip">
+    <span id="limitLabel">100/100 aaj baaki</span>
+    <div class="limit-track"><div class="limit-fill" id="limitFill" style="width:100%"></div></div>
+  </div>
+  <div class="theme-row" id="themeRow">
+    <div class="swatch" data-theme="maroon-gold" style="background:linear-gradient(135deg,#8c3a3a,#dd7a32);" title="Maroon + Gold"></div>
+    <div class="swatch" data-theme="gold-black" style="background:linear-gradient(135deg,#0c0a08,#d4af37);" title="Rich Gold + Black"></div>
+    <div class="swatch" data-theme="deep-dark" style="background:linear-gradient(135deg,#0a0a0c,#b08968);" title="Deep Dark"></div>
+    <div class="swatch" data-theme="blue-gold" style="background:linear-gradient(135deg,#0b1220,#d4af37);" title="Deep Blue + Gold"></div>
+  </div>
+</header>
+
+<main>
+  <div id="chatBox"></div>
+
+  <div class="chips" id="quickChips" style="display:none;"></div>
+
+  <div class="composer-wrap">
+    <div class="composer">
+      <textarea id="userInput" rows="1" placeholder="Apna jawab likhiye..."></textarea>
+      <button class="round-btn" id="micBtn" title="Bol kar likhein">🎙</button>
+      <button class="round-btn" id="sendBtn" title="Bhejein">➤</button>
+    </div>
+  </div>
+  <p class="footnote">
+    Yeh prompt kisi bhi AI (ChatGPT, Gemini, Claude) par bhi kaam karega — koi lock-in nahi.<br>
+    <a href="https://swamiatmajagran.in" target="_blank">swamiatmajagran.in</a> ke liye design kiya gaya
+  </p>
+</main>
+
+<script>
+// NOTE: System prompt ab yahan nahi hai — woh /api/ask.js (server) mein rehta hai,
+// taaki prompt-engineering bhi aasani se update ho sake bina frontend chhede.
+const API_ENDPOINT = '/api/ask'; // agar backend alag domain par hai to poora URL yahan daalein
+
+const REPORT_TYPES = ["Lagan Maya Sutra","Shukra Maya Sutra","D10 Destiny Sutra","Bhagya Sutra","Seedha paste kar raha/rahi hoon"];
+const TOPIC_CHIPS = ["🌟 Career aur Karma","💍 Vivah aur Rishtey","🕉️ Adhyatmik Path","🔄 Vartaman Dasha ka Prabhav"];
+const FOLLOWUPS = ["Aur vistar se samjhayein","Iske koi upay hain?","Yeh samay kab tak rahega?","Isse mera career kaise juda hai?"];
+
+let state = JSON.parse(localStorage.getItem('drashta_state') || 'null') || {
+  step:1, name:'', reportType:'', chartData:'', history:[]
+};
+
+/* ---------- THEME SWITCHER ---------- */
+(function(){
+  const saved = localStorage.getItem('drashta_theme') || 'maroon-gold';
+  document.body.setAttribute('data-theme', saved);
+  function markActive(){
+    document.querySelectorAll('.swatch').forEach(s=>{
+      s.classList.toggle('active', s.dataset.theme === document.body.getAttribute('data-theme'));
+    });
+  }
+  window.addEventListener('DOMContentLoaded', markActive);
+  document.getElementById('themeBtn').onclick = ()=>{
+    document.getElementById('themeRow').classList.toggle('open');
+  };
+  document.querySelectorAll('.swatch').forEach(s=>{
+    s.onclick = ()=>{
+      document.body.setAttribute('data-theme', s.dataset.theme);
+      localStorage.setItem('drashta_theme', s.dataset.theme);
+      markActive();
+    };
+  });
+  markActive();
+})();
+
+/* ---------- TEXT TO SPEECH (calm tone) ---------- */
+let currentUtterance = null;
+function stripForSpeech(text){
+  return text.replace(/<[^>]+>/g,' ').replace(/\*\*/g,'').replace(/\s+/g,' ').trim();
+}
+function pickHindiVoice(){
+  const voices = speechSynthesis.getVoices();
+  return voices.find(v => v.lang === 'hi-IN') || voices.find(v => v.lang && v.lang.startsWith('hi')) || null;
+}
+function toggleSpeak(btn, rawText){
+  if(currentUtterance && speechSynthesis.speaking){
+    speechSynthesis.cancel();
+    currentUtterance = null;
+    btn.textContent = '🔊 Sunein';
+    return;
+  }
+  const u = new SpeechSynthesisUtterance(stripForSpeech(rawText));
+  const v = pickHindiVoice();
+  if(v) u.voice = v;
+  u.lang = 'hi-IN';
+  u.rate = 0.86;   // thoda dheema — calm tone
+  u.pitch = 0.95;  // halka neeche — soft, shaant awaaz
+  u.volume = 1;
+  u.onend = ()=>{ btn.textContent = '🔊 Sunein'; currentUtterance = null; };
+  currentUtterance = u;
+  btn.textContent = '⏸ Ruken';
+  speechSynthesis.speak(u);
+}
+
+const chatBox = document.getElementById('chatBox');
+const input = document.getElementById('userInput');
+const chips = document.getElementById('quickChips');
+
+function save(){ localStorage.setItem('drashta_state', JSON.stringify(state)); }
+
+function escapeHTML(s){
+  return s.replace(/[&<>]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[t]));
+}
+function formatBot(text){
+  let t = escapeHTML(text);
+  t = t.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  t = t.replace(/^- (.+)$/gm, '<li>$1</li>');
+  t = t.replace(/(<li>.*<\/li>\n?)+/gs, m => '<ul>'+m+'</ul>');
+  t = t.replace(/\n{2,}/g,'</p><p>').replace(/\n/g,'<br>');
+  return '<p>'+t+'</p>';
+}
+
+function addBot(text, {raw=false, withActions=false} = {}){
+  const row = document.createElement('div');
+  row.className = 'row';
+  row.innerHTML = `<div class="avatar-sm">ॐ</div><div class="bubble bot">${raw ? text : formatBot(text)}</div>`;
+  chatBox.appendChild(row);
+
+  const act = document.createElement('div');
+  act.className = 'msg-actions';
+  const plainText = stripForSpeech(text);
+  const speakBtn = document.createElement('button');
+  speakBtn.textContent = '🔊 Sunein';
+  speakBtn.onclick = ()=>toggleSpeak(speakBtn, plainText);
+  act.appendChild(speakBtn);
+  if(withActions){
+    const copyBtn = document.createElement('button');
+    copyBtn.textContent = '⧉ Copy';
+    copyBtn.onclick = ()=>{
+      navigator.clipboard.writeText(plainText);
+      copyBtn.textContent = '✓ Copied';
+      setTimeout(()=>copyBtn.textContent='⧉ Copy', 1400);
+    };
+    act.appendChild(copyBtn);
+  }
+  chatBox.appendChild(act);
+  scrollDown();
+}
+function addUser(text){
+  const row = document.createElement('div');
+  row.className = 'row user';
+  row.innerHTML = `<div class="bubble user">${escapeHTML(text)}</div>`;
+  chatBox.appendChild(row);
+  scrollDown();
+}
+function scrollDown(){ window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'}); }
+
+function showThinking(){
+  const row = document.createElement('div');
+  row.className = 'thinking';
+  row.id = 'thinkingRow';
+  row.innerHTML = `<div class="diya"></div><span>Drashta AI chart ko dekh raha hai...</span>`;
+  chatBox.appendChild(row);
+  scrollDown();
+}
+function hideThinking(){ document.getElementById('thinkingRow')?.remove(); }
+
+function setChips(list, handler, ghostLast=false){
+  chips.innerHTML = '';
+  list.forEach((label,i)=>{
+    const b = document.createElement('button');
+    b.className = 'chip' + (ghostLast && i===list.length-1 ? ' ghost':'');
+    b.textContent = label;
+    b.onclick = ()=>handler(label);
+    chips.appendChild(b);
+  });
+  chips.style.display = 'flex';
+}
+function clearChips(){ chips.style.display='none'; chips.innerHTML=''; }
+
+/* ---------- DAILY LIMIT ---------- */
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function getLimit(){
+  let l = JSON.parse(localStorage.getItem('drashta_limit')||'null');
+  if(!l || l.date !== todayKey()) l = {date:todayKey(), used:0};
+  return l;
+}
+function useMessage(){
+  let l = getLimit();
+  l.used += 1;
+  localStorage.setItem('drashta_limit', JSON.stringify(l));
+  renderLimit();
+  return l.used <= 100;
+}
+function renderLimit(){
+  const l = getLimit();
+  const left = Math.max(0, 100 - l.used);
+  document.getElementById('limitLabel').textContent = left + '/100 aaj baaki';
+  document.getElementById('limitFill').style.width = left + '%';
+}
+renderLimit();
+
+/* ---------- FLOW ---------- */
+function boot(){
+  if(state.history.length){
+    state.history.forEach(m => m.role==='bot' ? addBot(m.text) : addUser(m.text));
+    if(state.step===3) setChips([...TOPIC_CHIPS], selectTopic);
+  } else {
+    addBot(`Namaste! Main <b>Drashta AI</b> hoon, Swami Atma Jagran ka sathi. Aapke consultation mein bahut bahut swagat hai 🙏<br><br>Kripya pehle apna shubh naam bataiye.`, {raw:true});
+  }
+}
+function pushHistory(role, text){
+  state.history.push({role, text});
+  save();
+}
+
+/* Website/product ke baare mein poochhe gaye sawalon ko pehchanne ke liye */
+function isInfoQuestion(t){
+  const q = t.toLowerCase();
+  const kw = ['kaun hai','kya hai','kya milega','kaise kaam','price','paisa','kitna','rate',
+    'shukra maya','lagan maya','d10 destiny','bhagya sutra','swami atma jagran','swamiatmajagran',
+    'subscription','consultation kaise','vip','website','janm patrika','guna milan'];
+  return q.includes('?') || kw.some(k=>q.includes(k));
+}
+
+async function handleSubmit(){
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  if(getLimit().used >= 100){
+    addUser(text);
+    addBot("Aaj ki 100 message ki limit poori ho gayi hai 🙏 Kal phir se 100 fresh messages ke saath baat-cheet continue kar sakte hain. Dhanyawad!");
+    return;
+  }
+
+  addUser(text);
+  pushHistory('user', text);
+
+  if(state.step===1){
+    if(isInfoQuestion(text)){
+      await askAI(text, {showFollowups:false});
+      const msg = "Koi aur jaankari chahiye? Ya chaliye shuru karte hain — kripya apna shubh naam bataiye 🙏";
+      addBot(msg); pushHistory('bot', msg);
+      return;
+    }
+    state.name = text;
+    state.step = 2;
+    save();
+    setTimeout(()=>{
+      const msg = `Namaste <b>${escapeHTML(state.name)} ji</b>! 🙏<br><br>Ab apna Lagan Maya Sutra, Shukra Maya Sutra, ya jo bhi report aapke paas hai, yahan paste kar dijiye.`;
+      addBot(msg, {raw:true});
+      pushHistory('bot', msg);
+      setChips(REPORT_TYPES, (label)=>{
+        state.reportType = label==="Seedha paste kar raha/rahi hoon" ? '' : label;
+        save(); clearChips(); input.focus();
+      });
+    }, 400);
+  } else if(state.step===2){
+    if(isInfoQuestion(text)){
+      await askAI(text, {showFollowups:false});
+      const msg = `${escapeHTML(state.name)} ji, jab taiyar hon, apna Lagan Maya Sutra ya jo bhi report ho, yahan paste kar dijiye 🙏`;
+      addBot(msg); pushHistory('bot', msg);
+      return;
+    }
+    state.chartData = text;
+    state.step = 3;
+    save();
+    await confirmChart();
+  } else {
+    clearChips();
+    askAI(text);
+  }
+}
+
+async function confirmChart(){
+  showThinking();
+  let summary;
+  try{ summary = await callBackend('__CHART_CONFIRM__'); }
+  catch(e){ summary = null; }
+  hideThinking();
+  if(summary){ addBot(summary); pushHistory('bot', summary); }
+  setTimeout(()=>{
+    const msg = `Aap kis vishay par sabse pehle margdarshan chahte hain?`;
+    addBot(msg);
+    pushHistory('bot', msg);
+    setChips([...TOPIC_CHIPS], selectTopic);
+  }, 350);
+}
+
+function selectTopic(label){
+  clearChips();
+  addUser(label);
+  pushHistory('user', label);
+  askAI(label);
+}
+
+async function askAI(query, {showFollowups=true} = {}){
+  if(!useMessage()){
+    addBot("Aaj ki 100 message ki limit poori ho gayi hai 🙏 Kal phir se 100 fresh messages ke saath baat-cheet continue kar sakte hain.");
+    return;
+  }
+  showThinking();
+  let reply, failed = false;
+  try{
+    reply = await callBackend(query);
+  } catch(e){
+    console.error(e);
+    failed = true;
+    reply = "Kshama kijiye, abhi Drashta AI se connection nahi ban pa raha 🙏";
+  }
+  hideThinking();
+  addBot(reply, {withActions: !failed});
+  pushHistory('bot', reply);
+
+  if(failed){
+    setChips(["🔁 Dobara koshish karein"], ()=>{ clearChips(); askAI(query, {showFollowups}); });
+    return;
+  }
+  if(showFollowups){
+    setChips(FOLLOWUPS.concat(["Kuch aur poochna hai"]), (label)=>{
+      if(label==="Kuch aur poochna hai"){ clearChips(); input.focus(); return; }
+      addUser(label); pushHistory('user', label); clearChips(); askAI(label);
+    }, true);
+  }
+}
+
+async function callBackend(query){
+  const res = await fetch(API_ENDPOINT, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      name: state.name,
+      reportType: state.reportType,
+      chartData: state.chartData,
+      query
+    })
+  });
+  const data = await res.json();
+  if(!res.ok || !data.text) throw new Error(data.error || 'Invalid response');
+  return data.text;
+}
+
+/* ---------- EVENTS ---------- */
+document.getElementById('sendBtn').onclick = handleSubmit;
+input.addEventListener('keydown', e=>{
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); handleSubmit(); }
+});
+input.addEventListener('input', ()=>{ input.style.height='auto'; input.style.height=input.scrollHeight+'px'; });
+
+document.getElementById('newChatBtn').onclick = ()=>{
+  if(confirm('Nayi shuruaat karein? Purani baat-cheet mit jayegi.')){
+    localStorage.removeItem('drashta_state');
+    state = {step:1, name:'', reportType:'', chartData:'', history:[]};
+    chatBox.innerHTML=''; clearChips();
+    boot();
+  }
+};
+
+/* ---------- VOICE INPUT ---------- */
+const micBtn = document.getElementById('micBtn');
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SR){
+  const rec = new SR();
+  rec.lang = 'hi-IN';
+  rec.interimResults = false;
+  let listening = false;
+  micBtn.onclick = ()=>{
+    if(listening){ rec.stop(); return; }
+    rec.start(); listening = true; micBtn.classList.add('listening');
+  };
+  rec.onresult = (e)=>{ input.value += e.results[0][0].transcript; input.dispatchEvent(new Event('input')); };
+  rec.onend = ()=>{ listening=false; micBtn.classList.remove('listening'); };
+} else {
+  micBtn.style.display = 'none';
+}
+
+boot();
+</script>
+</body>
+</html>
