@@ -59,3 +59,28 @@ Ye 13 tests check karte hain: token validation, consent, memory isolation, model
 ## Limitations
 - Token browser ke localStorage mein hai. Agar user browser data clear kare to memory chali jaayegi. Login system baad mein add kar sakte hain.
 - Daily limit token par hai, user par nahi.
+
+## Troubleshooting: "Server setup adhoora hai"
+
+Ye error tab aata hai jab server par zaroori variable set nahi hota ya Supabase se connect nahi ho pata.
+
+**Step 1: Health check kholiye.** Browser mein ye URL kholiye (apni site ka naam daalkar):
+```
+https://YOUR-SITE.vercel.app/api/ask
+```
+Ye JSON dikhayega, jaise:
+```json
+{ "ok": false, "env": { "SUPABASE_URL": true, "SUPABASE_SERVICE_ROLE_KEY": false, "DRASHTA_API": true }, "database": "skipped (Supabase env missing)" }
+```
+- `false` wala variable Vercel mein galat naam se ya Production environment mein nahi hai.
+- `database: "error (HTTP 401)"` ka matlab key galat hai. `HTTP 404` ka matlab schema nahi chala ya URL galat hai.
+- Value kabhi nahi dikhayi jaati, sirf true/false.
+
+**Step 2: Vercel variables.** Naam bilkul ye hone chahiye (capital letters, underscore):
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (Secret)
+- `DRASHTA_API`
+
+Har ek ke liye **Production** tick hona chahiye. Variable badalne ke baad **Redeploy** (cache off) zaroor karein.
+
+**Step 3: Supabase.** `supabase/schema.sql` SQL Editor mein chal chuka hona chahiye. Health check mein `database: ok` aana chahiye.
