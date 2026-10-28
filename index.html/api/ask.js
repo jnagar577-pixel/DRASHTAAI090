@@ -1,6 +1,6 @@
 // api/ask.js
-// Yeh Vercel serverless function hai — DeepSeek API key yahan kabhi likhi nahi jaati.
-// Key Vercel dashboard me "Environment Variable" (DRASHTA_API) ki tarah set hoti hai.
+// Yeh Vercel serverless function hai — API key yahan kabhi hardcode nahi hoti.
+// Groq key Vercel dashboard ke GROQ_API_KEY environment variable se aati hai.
 
 const SYSTEM_PROMPT = `Tum "Drashta AI" ho — Swami Atma Jagran (swamiatmajagran.in) ke AI Vedic astrology aur spiritual guidance assistant. Tumhare banane wale Jatin Nagar hain, ek Osho "Zorba the Buddha" sanyasi aur 3+ saal se practicing Vedic astrologer.
 
@@ -48,10 +48,10 @@ export default async function handler(req, res) {
   const { name, reportType, chartData, query } = req.body || {};
   if (!query) return res.status(400).json({ error: 'query zaroori hai' });
 
-  const apiKey = (process.env.DRASHTA_API || '').trim();
-  if (!apiKey) return res.status(500).json({ error: 'Server par DRASHTA_API set nahi hai' });
+  const apiKey = (process.env.GROQ_API_KEY || '').trim();
+  if (!apiKey) return res.status(500).json({ error: 'Server par GROQ_API_KEY set nahi hai' });
 
-  const endpoint = 'https://api.deepseek.com/chat/completions';
+  const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
 
   let contextBlock;
   if (query === '__CHART_CONFIRM__') {
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: contextBlock }
@@ -81,16 +81,16 @@ export default async function handler(req, res) {
     const data = await r.json().catch(() => ({}));
 
     if (!r.ok) {
-      console.error('DeepSeek HTTP error:', r.status, JSON.stringify(data));
+      console.error('Groq HTTP error:', r.status, JSON.stringify(data));
       return res.status(502).json({
-        error: `DeepSeek error ${r.status}: ${data?.error?.message || 'unknown'}`
+        error: `Groq error ${r.status}: ${data?.error?.message || 'unknown'}`
       });
     }
 
     const text = data?.choices?.[0]?.message?.content?.trim() || '';
 
     if (!text) {
-      console.error('DeepSeek empty response:', JSON.stringify(data));
+      console.error('Groq empty response:', JSON.stringify(data));
       return res.status(502).json({ error: 'Model ne khaali jawab diya' });
     }
 
