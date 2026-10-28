@@ -1,5 +1,5 @@
 // api/ask.js
-// Yeh Vercel serverless function hai — Gemini API key yahan kabhi likhi nahi jaati.
+// Yeh Vercel serverless function hai — DeepSeek API key yahan kabhi likhi nahi jaati.
 // Key Vercel dashboard me "Environment Variable" (DRASHTA_API) ki tarah set hoti hai.
 
 const SYSTEM_PROMPT = `Tum "Drashta AI" ho — Swami Atma Jagran (swamiatmajagran.in) ke AI Vedic astrology aur spiritual guidance assistant. Tumhare banane wale Jatin Nagar hain, ek Osho "Zorba the Buddha" sanyasi aur 3+ saal se practicing Vedic astrologer.
@@ -51,8 +51,7 @@ export default async function handler(req, res) {
   const apiKey = (process.env.DRASHTA_API || '').trim();
   if (!apiKey) return res.status(500).json({ error: 'Server par DRASHTA_API set nahi hai' });
 
-  const model = (process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim();
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const endpoint = 'https://api.deepseek.com/chat/completions';
 
   let contextBlock;
   if (query === '__CHART_CONFIRM__') {
@@ -66,33 +65,33 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: contextBlock }] }],
-        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-        generationConfig: { maxOutputTokens: 8192, temperature: 0.7 }
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: contextBlock }
+        ],
+        stream: false,
+        temperature: 0.7
       })
     });
 
     const data = await r.json().catch(() => ({}));
 
     if (!r.ok) {
-      console.error('Gemini HTTP error:', r.status, JSON.stringify(data));
+      console.error('DeepSeek HTTP error:', r.status, JSON.stringify(data));
       return res.status(502).json({
-        error: `Gemini error ${r.status}: ${data?.error?.message || 'unknown'}`
+        error: `DeepSeek error ${r.status}: ${data?.error?.message || 'unknown'}`
       });
     }
 
-    const text = (data?.candidates?.[0]?.content?.parts || [])
-      .map(p => p.text || '')
-      .join('')
-      .trim();
+    const text = data?.choices?.[0]?.message?.content?.trim() || '';
 
     if (!text) {
-      const reason = data?.candidates?.[0]?.finishReason || data?.promptFeedback?.blockReason || 'unknown';
-      console.error('Gemini empty response:', JSON.stringify(data));
-      return res.status(502).json({ error: `Model ne khaali jawab diya (reason: ${reason})` });
+      console.error('DeepSeek empty response:', JSON.stringify(data));
+      return res.status(502).json({ error: 'Model ne khaali jawab diya' });
     }
 
     return res.status(200).json({ text });
