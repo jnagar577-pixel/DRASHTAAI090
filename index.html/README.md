@@ -90,3 +90,6 @@ Har ek ke liye **Production** tick hona chahiye. Variable badalne ke baad **Rede
 
 ## Debug mode
 Vercel mein `DEBUG_ERRORS` = `1` set karke redeploy karein. Tab chat mein error ke saath asli wajah `[debug: ...]` mein dikhegi. Problem solve hone par `DEBUG_ERRORS` hata dein.
+
+## Brand knowledge (v6)
+Swami ji, website, reports aur consultation ki jaankari ab Supabase ki `knowledge_base` table mein hai. Setup ke liye `supabase/migration_v6_knowledge.sql` SQL Editor mein chalayein. Baad mein Table Editor se `content` edit karke koi bhi jaankari badal sakte hain, redeploy ki zaroorat nahi. Upay sirf tab aate hain jab user khud poochhe.

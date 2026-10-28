@@ -14,7 +14,7 @@ const { default: handler } = await import('../api/ask.js');
 let db, groqCalls, groqRule, bumpOverride, lastSupaHeaders;
 
 function reset() {
-  db = { conversations: [], messages: [], feedback: [], usage: new Map(), nextId: 1 };
+  db = { conversations: [], messages: [], feedback: [], usage: new Map(), nextId: 1, knowledge: [{ topic: 'test', content: 'SWAMI_TEST_FACT' }], knowledgeFail: false };
   groqCalls = [];
   groqRule = null;       // function(model) -> 'ok' | 'notfound'
   bumpOverride = null;
@@ -41,6 +41,10 @@ globalThis.fetch = async (url, opts = {}) => {
   const body = opts.body ? JSON.parse(opts.body) : null;
   const eq = k => { const v = u.searchParams.get(k); return v && v.startsWith('eq.') ? v.slice(3) : null; };
 
+  if (path === 'knowledge_base') {
+    if (db.knowledgeFail) return reply(500, { message: 'knowledge down' });
+    return reply(200, db.knowledge);
+  }
   if (path === 'rpc/bump_usage') {
     const key = `${body.p_hash}|${body.p_day}`;
     const n = (db.usage.get(key) || 0) + 1;
@@ -264,4 +268,19 @@ test('health check flags missing Supabase env', async () => {
   process.env.SUPABASE_URL = saved;
   assert.equal(res.body.env.SUPABASE_URL, false);
   assert.equal(res.body.ok, false);
+});
+
+test('brand knowledge from database is sent to the model in its own block', async () => {
+  await intake(TOKEN_A);
+  await call({ token: TOKEN_A, action: 'chat', query: 'Swami ji kaun hain?' });
+  const sys = groqCalls.at(-1).messages.filter(m => m.role === 'system').map(m => m.content).join('\n');
+  assert.ok(sys.includes('BRAND KNOWLEDGE'));
+  assert.ok(sys.includes('SWAMI_TEST_FACT'));
+});
+
+test('chat still works when knowledge_base fails', async () => {
+  db.knowledgeFail = true;
+  const r = await call({ token: TOKEN_A, action: 'chat', query: 'Hello' });
+  assert.equal(r.code, 200);
+  assert.equal(r.body.text, 'Mock jawab #1');
 });
