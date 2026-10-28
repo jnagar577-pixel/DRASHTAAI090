@@ -48,8 +48,8 @@ export default async function handler(req, res) {
   const { name, reportType, chartData, query } = req.body || {};
   if (!query) return res.status(400).json({ error: 'query zaroori hai' });
 
-  const apiKey = (process.env.GROQ_API_KEY || '').trim();
-  if (!apiKey) return res.status(500).json({ error: 'Server par GROQ_API_KEY set nahi hai' });
+  const apiKey = (process.env.DRASHTA_API || process.env.GROQ_API_KEY || '').trim();
+  if (!apiKey) return res.status(500).json({ error: 'Server par DRASHTA_API ya GROQ_API_KEY set nahi hai' });
 
   const endpoint = 'https://api.groq.com/openai/v1/chat/completions';
 
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: (process.env.GROQ_MODEL || 'llama-3.1-8b-instant').trim(),
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: contextBlock }
