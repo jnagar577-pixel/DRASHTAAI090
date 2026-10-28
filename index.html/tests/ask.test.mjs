@@ -10,6 +10,7 @@ process.env.DRASHTA_API = 'gsk_test';
 delete process.env.GROQ_MODEL;
 
 const { default: handler } = await import('../api/ask.js');
+const { numerology } = await import('../lib/numerology.js');
 
 let db, groqCalls, groqRule, bumpOverride, lastSupaHeaders;
 
@@ -44,6 +45,11 @@ globalThis.fetch = async (url, opts = {}) => {
   if (path === 'knowledge_base') {
     if (db.knowledgeFail) return reply(500, { message: 'knowledge down' });
     return reply(200, db.knowledge);
+  }
+  if (path === 'messages' && method === 'DELETE') {
+    const cid = eq('conversation_id');
+    db.messages = db.messages.filter(m => m.conversation_id !== cid);
+    return reply(204, null);
   }
   if (path === 'rpc/bump_usage') {
     const key = `${body.p_hash}|${body.p_day}`;
@@ -283,4 +289,49 @@ test('chat still works when knowledge_base fails', async () => {
   const r = await call({ token: TOKEN_A, action: 'chat', query: 'Hello' });
   assert.equal(r.code, 200);
   assert.equal(r.body.text, 'Mock jawab #1');
+});
+
+test('summary contains deterministic house table from lagan', async () => {
+  const r = await intake(TOKEN_A, { lagan: 'धनु', moon_rashi: 'धनु' });
+  assert.equal(r.code, 200);
+  assert.match(r.body.summary, /भाव 2: मकर \(स्वामी शनि\)/);
+  assert.match(r.body.summary, /भाव 3: कुंभ \(स्वामी शनि\)/);
+  assert.match(r.body.summary, /भाव 10: कन्या \(स्वामी बुध\)/);
+});
+
+test('new person (different name) clears old conversation messages', async () => {
+  await intake(TOKEN_A);
+  await call({ token: TOKEN_A, action: 'chat', query: 'Jatin ka sawal' });
+  assert.equal(db.messages.length, 2);
+  await intake(TOKEN_A, { name: 'DHRUV NAGAR', dob: '2008-07-23', lagan: 'धनु' });
+  assert.equal(db.messages.length, 0, 'purani baatcheet hat deni chahiye');
+});
+
+test('same person re-submitting intake keeps messages', async () => {
+  await intake(TOKEN_A);
+  await call({ token: TOKEN_A, action: 'chat', query: 'Pehla sawal' });
+  await intake(TOKEN_A, { lagan: 'मकर' });
+  assert.equal(db.messages.length, 2, 'wahi insaan ho to baatcheet rehni chahiye');
+});
+
+test('numerology: Jatin 2005-07-22 -> Mulank 4, Bhagyank 9', () => {
+  const n = numerology('2005-07-22');
+  assert.equal(n.mulank.number, 4);
+  assert.equal(n.bhagyank.number, 9);
+  assert.equal(n.mulank.hi, 'Rahu');
+});
+test('numerology: Dhruv 2008-07-23 -> Mulank 5, Bhagyank 4', () => {
+  const n = numerology('2008-07-23');
+  assert.equal(n.mulank.number, 5);
+  assert.equal(n.bhagyank.number, 4);
+});
+test('numerology: invalid date returns null', () => {
+  assert.equal(numerology('2005-7-22'), null);
+  assert.equal(numerology('2005-07-32'), null);
+});
+test('intake response includes numerology and summary line', async () => {
+  const r = await intake(TOKEN_A, { dob: '2005-07-22' });
+  assert.equal(r.body.numerology.mulank.number, 4);
+  assert.match(r.body.summary, /मूलांक 4/);
+  assert.match(r.body.summary, /भाग्यांक 9/);
 });

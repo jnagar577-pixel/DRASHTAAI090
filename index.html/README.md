@@ -93,3 +93,11 @@ Vercel mein `DEBUG_ERRORS` = `1` set karke redeploy karein. Tab chat mein error 
 
 ## Brand knowledge (v6)
 Swami ji, website, reports aur consultation ki jaankari ab Supabase ki `knowledge_base` table mein hai. Setup ke liye `supabase/migration_v6_knowledge.sql` SQL Editor mein chalayein. Baad mein Table Editor se `content` edit karke koi bhi jaankari badal sakte hain, redeploy ki zaroorat nahi. Upay sirf tab aate hain jab user khud poochhe.
+
+## v7 changes
+- Lagan se bhav ki table code se banti hai (`भाव तालिका`). Bot bhav/swami khud nahi nikalta.
+- Naam ya janm tithi badalne par purani baatcheet apne-aap hat jaati hai (naye insaan ke liye).
+- Agar paste kiya hua text form ke lagan se mel na khaye, to bot batata hai aur mix nahi karta.
+
+## v8: Ank jyotish (numerology)
+Intake ke baad summary ke saath Mulank (janm din ka ank) aur Bhagyank (puri janm tithi ka ank) ka card dikhta hai. Logic `lib/numerology.js` mein hai. Gemstone (ratna) jaan-bujh kar nahi dikhaya gaya.

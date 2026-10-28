@@ -1,6 +1,7 @@
 // api/ask.js — Drashta AI backend (Vercel serverless function)
 // Browser sirf /api/ask ko call karta hai. Groq key aur Supabase service key sirf server par rehti hain.
 import { createHash } from 'node:crypto';
+import { numerology } from '../lib/numerology.js';
 
 const SYSTEM_PROMPT = `Tum "Drashta AI" ho, Swami Atma Jagran ki website ka saathi. Tumhara swabhav unki vichardhara jaisa hai: Zorba the Buddha. Matlab jeevan ko poori tarah jeena, par saath mein bhitar shanti aur jagran rakhna. Tum modern, samajhdar aur saaf-dil ho. Andhvishwas, darr aur dhong ke khilaf ho, lekin kisi ka mazaak nahi udaate.
 
@@ -33,9 +34,14 @@ SWAMI JI, WEBSITE AUR PRODUCTS
 - Gehre career ya vivah ke sawal par ek baar, bahut soft tareeke se, bata sakte ho ki vistrit chart dekhna madadgar hoga. Bar-bar mat kaho.
 
 CHART KA ISTEMAAL
+- "KUNDLI DATA" mein "भाव तालिका" di gayi hai. Bhav, unki rashi aur swami usi table se lo. Khud se bhav ya swami mat nikalo.
+- Agar user ka paste kiya hua text KUNDLI DATA ke lagan ya naam se mel nahi khata, to narmi se batao: "Aapne jo text diya usme alag lagan likha hai. Sahi jawab ke liye apni hi kundli paste karein." Dono ko mix mat karo.
 - Kundli ke facts sirf "KUNDLI DATA" se lo. Lagan, Chandra rashi, grah ka bhav aur nakshatra wahi likho jo data mein saaf hain.
 - Agar koi jaankari data mein nahi hai, to kaho ki wo chart mein spasht nahi hai. Kabhi andaaza mat lagao.
 - Grah ka naam, rashi aur nakshatra alag-alag mat milao.
+
+ANK JYOTISH
+- Mulank aur Bhagyank sirf tab batao jab user poochhe, ya Kundli Saar mein ek line mein. Ise astrology se alag, ek sahayak drishtikon ki tarah kaho.
 
 SENSITIVE VISHAY
 - Sehat, kanooni ya bade arthik faisle par saadharan, vivekpoorn salah bhi do, aur zaroorat ho to narmi se kisi doctor, vakil ya financial salahkar se milne ka sujhav do.
@@ -148,13 +154,29 @@ function validateIntake(b) {
 }
 
 // Summary sirf user ke diye gaye fields se banta hai, model se nahi (isse galat andaaze nahi lagte)
+const RASHI_LORD = {
+  'मेष': 'मंगल', 'वृषभ': 'शुक्र', 'मिथुन': 'बुध', 'कर्क': 'चंद्र', 'सिंह': 'सूर्य', 'कन्या': 'बुध',
+  'तुला': 'शुक्र', 'वृश्चिक': 'मंगल', 'धनु': 'गुरु', 'मकर': 'शनि', 'कुंभ': 'शनि', 'मीन': 'गुरु',
+};
+// Lagan se 12 bhav ki rashi aur swami (code se, model se nahi)
+function houseTable(lagan) {
+  const i = RASHIS.indexOf(lagan);
+  if (i < 0) return '';
+  return Array.from({ length: 12 }, (_, n) => {
+    const r = RASHIS[(i + n) % 12];
+    return `भाव ${n + 1}: ${r} (स्वामी ${RASHI_LORD[r]})`;
+  }).join('\n');
+}
+
 function buildSummary(d) {
   return [
     `नाम: ${d.name}`,
     `जन्म तिथि: ${d.dob}`,
     `जन्म समय: ${d.birth_time || 'पता नहीं'}`,
     d.birth_place ? `जन्म स्थान: ${d.birth_place}` : null,
+    (() => { const n = numerology(d.dob); return n ? `अंक ज्योतिष: मूलांक ${n.mulank.number} (${n.mulank.hi}), भाग्यांक ${n.bhagyank.number} (${n.bhagyank.hi})` : null; })(),
     `लग्न राशि (user ke anusaar): ${d.lagan_rashi}`,
+    `भाव तालिका (लग्न से, सही मानें):\n${houseTable(d.lagan_rashi)}`,
     d.moon_rashi ? `चंद्र राशि (user ke anusaar): ${d.moon_rashi}` : null,
     d.notes ? `User dwara diya gaya kundli/report ka text:\n${d.notes}` : null,
   ].filter(Boolean).join('\n');
@@ -250,6 +272,10 @@ async function handleIntake(c, hash, b) {
   if (v.error) throw new HttpError(400, v.error);
   const d = v.data;
   const conv = await ensureConversation(c, hash);
+  // Agar naam ya janm tithi badli hai, to purani baatcheet (purane insaan ki) hata do
+  if (conv.name && (conv.name !== d.name || conv.dob !== d.dob)) {
+    await sb(c, `messages?conversation_id=eq.${conv.id}`, { method: 'DELETE', prefer: 'return=minimal' });
+  }
   const now = new Date().toISOString();
   await sb(c, `conversations?id=eq.${conv.id}`, {
     method: 'PATCH',
@@ -266,7 +292,7 @@ async function handleIntake(c, hash, b) {
     },
     prefer: 'return=minimal',
   });
-  return { summary: buildSummary(d) };
+  return { summary: buildSummary(d), numerology: numerology(d.dob) };
 }
 
 async function handleFeedback(c, hash, b) {
