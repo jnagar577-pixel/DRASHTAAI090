@@ -558,7 +558,7 @@ async function askAI(query, {showFollowups=true} = {}){
   } catch(e){
     console.error(e);
     failed = true;
-    reply = "Kshama kijiye, abhi Drashta AI se connection nahi ban pa raha 🙏";
+    reply = `Kshama kijiye, abhi Drashta AI se connection nahi ban pa raha 🙏\n\n**Technical detail (debug ke liye):** ${e.message}`;
   }
   hideThinking();
   addBot(reply, {withActions: !failed});
@@ -587,8 +587,10 @@ async function callBackend(query){
       query
     })
   });
-  const data = await res.json();
-  if(!res.ok || !data.text) throw new Error(data.error || 'Invalid response');
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok || !data.text){
+    throw new Error(`[HTTP ${res.status}] ${data.error || 'Invalid/empty response from server'}`);
+  }
   return data.text;
 }
 
