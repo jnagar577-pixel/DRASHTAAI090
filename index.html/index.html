@@ -1000,12 +1000,28 @@ async function api(payload){
   }catch(e){
     throw new Error('Internet connection mein dikkat hai. Kripya check karke dobara koshish karein.');
   }
-  const data = await res.json().catch(() => ({}));
+  const responseText = await res.text();
+  let data = {};
+  try { data = responseText ? JSON.parse(responseText) : {}; }
+  catch (parseError) {
+    console.error('API returned a non-JSON response:', { status: res.status, endpoint: API_ENDPOINT, preview: responseText.slice(0, 240) });
+  }
   if(!res.ok){
-    const err = new Error(data.error || 'Abhi thodi dikkat aa rahi hai 🙏');
+    let message = data.error || data.message;
+    if (!message) {
+      if (res.status === 404) message = 'API endpoint nahi mila (HTTP 404). Website ko /api/ask serverless route ke saath deploy karein; sirf HTML/static hosting se chat API nahi chalegi.';
+      else if (res.status >= 500) message = `Server mein dikkat hai (HTTP ${res.status}). Deployment logs aur server environment variables check karein.`;
+      else message = `Request poori nahi hui (HTTP ${res.status}). Kripya dobara koshish karein.`;
+    }
+    const err = new Error(message);
     err.status = res.status;
-    if(data.detail){ console.error('Server detail:', data.detail); err.message += ' [debug: ' + data.detail + ']'; }
+    if(data.detail){ console.error('Server detail:', data.detail); }
+    if (!responseText || !Object.keys(data).length) console.error('API response body:', responseText.slice(0, 500));
     throw err;
+  }
+  if (!responseText) return {};
+  if (!Object.keys(data).length && responseText.trim()) {
+    throw new Error('Server se valid JSON response nahi mila. Deployment/API route configuration check karein.');
   }
   return data;
 }
