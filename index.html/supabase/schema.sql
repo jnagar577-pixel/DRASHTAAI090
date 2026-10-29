@@ -1,5 +1,5 @@
--- Drashta AI: Supabase schema.
--- Supabase Dashboard → SQL Editor mein ye poora script ek baar chalaiye.
+-- Turiya AI: core Supabase schema.
+-- Run this only after reviewing the target project and confirming the tables are not already present.
 
 create table if not exists conversations (
   id uuid primary key default gen_random_uuid(),
@@ -39,7 +39,6 @@ create table if not exists usage_daily (
   primary key (token_hash, day)
 );
 
--- Atomic daily counter (race condition se bachne ke liye)
 create or replace function bump_usage(p_hash text, p_day date) returns int
 language plpgsql security definer set search_path = public as $$
 declare c int;
@@ -50,8 +49,6 @@ begin
   return c;
 end $$;
 
--- Browser (anon key) kisi bhi table ya function ko chhoo nahi sakta.
--- Sirf server ki service_role key ka access hai.
 alter table conversations enable row level security;
 alter table messages enable row level security;
 alter table feedback enable row level security;

@@ -1413,7 +1413,7 @@ $('newChatBtn').onclick = async () => {
   try{
     await api({action:'delete'});
   }catch(e){
-    alert('Abhi data hatane mein dikkat hui. Kripya thodi der baad koshish karein.');
+    alert(e && e.message ? e.message : 'Abhi data hatane mein dikkat hui. Kripya thodi der baad koshish karein.');
     return;
   }
   localStorage.removeItem(K_STATE);

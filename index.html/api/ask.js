@@ -90,10 +90,10 @@ export default async function handler(req, res) {
       const asc = chart.d1_data.Ascendant;
       const summary = `Naam: ${chart.name}\nJanm: ${chart.dob} ${chart.birth_time}\nSthan: ${chart.birth_place}\nLagna: ${asc.sign} (${asc.degree}°), Nakshatra: ${asc.nakshatra} (Pada ${asc.pada})`;
       const { error: conversationError } = await supabase.from('conversations').upsert({
-        user_token_hash: tokenHash,
-        intake_summary: summary,
+        token_hash: tokenHash,
+        chart_summary: summary,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'user_token_hash' });
+      }, { onConflict: 'token_hash' });
       if (conversationError) {
         console.error('[Conversation persistence failed]', conversationError.message);
         return res.status(502).json({ error: 'Kundli save ho gayi, lekin conversation context save nahi ho saka. Dobara koshish karein.' });
@@ -115,16 +115,25 @@ export default async function handler(req, res) {
       if (!query || query.length > 4000) return res.status(400).json({ error: 'Please enter a question up to 4,000 characters.' });
 
       const [{ data: conv, error: convError }, { data: savedChart, error: chartError }] = await Promise.all([
-        supabase.from('conversations').select('*').eq('user_token_hash', tokenHash).maybeSingle(),
+        supabase.from('conversations').select('*').eq('token_hash', tokenHash).maybeSingle(),
         supabase.from('user_kundli_charts').select('*').eq('user_token_hash', tokenHash).maybeSingle()
       ]);
-      if (convError || chartError) return res.status(502).json({ error: 'Saved kundli context could not be retrieved. Please try again.' });
+      if (convError || chartError) {
+        console.error('[Saved kundli lookup failed]', {
+          conversation: convError?.message || null,
+          chart: chartError?.message || null
+        });
+        return res.status(502).json({
+          error: 'Saved kundli context could not be retrieved. Please check the Supabase tables and column names, then try again.',
+          code: convError ? 'CONVERSATION_LOOKUP_FAILED' : 'KUNDLI_LOOKUP_FAILED'
+        });
+      }
       if (!savedChart?.d1_data?.Ascendant?.sign || !savedChart?.d9_data?.Ascendant?.sign) {
         return res.status(409).json({ error: 'Pehle apni janm-details bharkar kundli taiyar kar lijiye. Uske baad main kundli ke aadhar par jawab de sakta hoon.' });
       }
 
       let systemPrompt = 'Aap Turiya AI hain, ek shaant, sahaj aur spasht Vedic jyotish margdarshak. User se aadar-yukt Hindi ya Hinglish mein baat karein. Saved chart facts aur interpretation ko alag rakhein. Missing chart facts invent na karein; uncertainty saaf batayein. Guaranteed predictions ka daava na karein.';
-      if (conv?.intake_summary) systemPrompt += `\n\nJatak Summary:\n${conv.intake_summary}`;
+      if (conv?.chart_summary) systemPrompt += `\n\nJatak Summary:\n${conv.chart_summary}`;
       systemPrompt += formatChartForGrok(savedChart);
 
       const messages = [
@@ -147,11 +156,57 @@ export default async function handler(req, res) {
     }
 
     if (action === 'delete') {
-      const { error: chartDeleteError } = await supabase.from('user_kundli_charts').delete().eq('user_token_hash', tokenHash);
-      if (chartDeleteError) return res.status(502).json({ error: 'Kundli data could not be deleted. Please try again.' });
-      const { error: convDeleteError } = await supabase.from('conversations').delete().eq('user_token_hash', tokenHash);
-      if (convDeleteError) return res.status(502).json({ error: 'Kundli was deleted but conversation data could not be deleted. Please try again.' });
-      return res.status(200).json({ success: true });
+      // Delete the chart first so a missing chart table does not silently clear only chat history.
+      const { error: chartDeleteError } = await supabase
+        .from('user_kundli_charts')
+        .delete()
+        .eq('user_token_hash', tokenHash);
+      if (chartDeleteError) {
+        console.error('[Kundli delete failed]', chartDeleteError.message);
+        return res.status(502).json({
+          error: 'Kundli data could not be deleted. Please check the user_kundli_charts table and user_token_hash column.',
+          code: 'KUNDLI_DELETE_FAILED'
+        });
+      }
+
+      const { data: conversations, error: conversationReadError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('token_hash', tokenHash);
+      if (conversationReadError) {
+        console.error('[Conversation lookup before delete failed]', conversationReadError.message);
+        return res.status(502).json({
+          error: 'Conversation data could not be located for deletion. Please check the conversations table and token_hash column.',
+          code: 'CONVERSATION_LOOKUP_FAILED'
+        });
+      }
+
+      for (const conversation of conversations || []) {
+        const { error: messagesDeleteError } = await supabase
+          .from('messages')
+          .delete()
+          .eq('conversation_id', conversation.id);
+        if (messagesDeleteError) {
+          console.error('[Message delete failed]', messagesDeleteError.message);
+          return res.status(502).json({
+            error: 'Old chat messages could not be deleted. Please check the messages table and conversation_id column.',
+            code: 'MESSAGES_DELETE_FAILED'
+          });
+        }
+      }
+
+      const { error: conversationDeleteError } = await supabase
+        .from('conversations')
+        .delete()
+        .eq('token_hash', tokenHash);
+      if (conversationDeleteError) {
+        console.error('[Conversation delete failed]', conversationDeleteError.message);
+        return res.status(502).json({
+          error: 'Kundli was deleted, but conversation data could not be deleted. Please try again.',
+          code: 'CONVERSATION_DELETE_FAILED'
+        });
+      }
+      return res.status(200).json({ success: true, deletedConversations: (conversations || []).length });
     }
 
     return res.status(400).json({ error: 'Invalid action.' });
