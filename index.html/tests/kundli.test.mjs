@@ -36,3 +36,25 @@ test('Vimshottari calculation produces Level 1-3 hierarchy', () => {
   assert.equal(res.all[0].lord, 'Saturn');
   assert.equal(res.current.mahadasha, 'Mars');
 });
+
+test('formatStdTime normalizes non-Indian timezone offsets', () => {
+  assert.equal(formatStdTime('2000-01-02', '09:05', '-4:00'), '09:05 02/01/2000 -04:00');
+});
+
+test('kundli service stops when saved chart lookup fails', async () => {
+  const { getOrComputeChart } = await import('../lib/kundli-service.js');
+  const supabase = {
+    from() {
+      const query = {
+        select() { return this; },
+        eq() { return this; },
+        async maybeSingle() { return { data: null, error: { message: 'permission denied' } }; }
+      };
+      return query;
+    }
+  };
+  await assert.rejects(
+    getOrComputeChart(supabase, 'token-hash', { name: 'Test', dob: '2000-01-02', birth_time: '09:05', birth_place: 'Test City' }),
+    /Saved kundli could not be checked: permission denied/
+  );
+});

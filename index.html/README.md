@@ -1,22 +1,39 @@
-# Turiya AI — Swami Atma Jagran
+# Turiya AI
 
-Vedic jyotish margdarshan chatbot with authentic astronomical Kundli Engine (D1, D9, and Level 1-3 Vimshottari Dasha).
+Existing Turiya AI frontend and serverless backend. The UI is preserved from the supplied project HTML; the intake flow and backend error handling have been tightened.
 
-## Folder Structure
-```
-index.html                               # Frontend application
-api/ask.js                               # Serverless API: chat, intake, feedback, delete
-lib/vedastro.js                          # VedAstro API client & calculation engine
-lib/kundli-service.js                    # Database chart cache & Grok prompt formatter
-lib/numerology.js                        # Mulank and Bhagyank calculator
-supabase/schema.sql                      # Base application schema
-supabase/migration_v9_kundli_engine.sql  # Additive Kundli chart schema (RLS enabled)
-tests/kundli.test.mjs                    # Kundli calculation test suite
-FINAL_AUDIT_REPORT.md                    # Project verification & audit certificate
-```
+## Project files
 
-## Setup Environment Variables in Vercel
-- `DRASHTA_API`: Groq API Key (`gsk_...`)
-- `SUPABASE_URL`: Supabase Project URL
-- `SUPABASE_SERVICE_ROLE_KEY`: Supabase Service Role Secret Key
-- `GROQ_MODEL`: Optional (defaults to `openai/gpt-oss-120b`)
+- `index.html`: complete frontend application.
+- `api/ask.js`: serverless chat/intake API. Privileged Supabase access remains server-side.
+- `lib/vedastro.js`: VedAstro client and chart calculations, including birth-location timezone offset handling.
+- `lib/kundli-service.js`: chart validation, Supabase persistence/cache, and chart context formatting.
+- `lib/numerology.js`: existing numerology helper.
+- `supabase/migration_v9_kundli_engine.sql`: existing additive migration file, included for reference only.
+- `tests/kundli.test.mjs`: existing calculation tests.
+- `.env.example`: names of required server environment variables, with no secrets.
+
+## Environment variables
+
+Configure these in the serverless deployment environment, not in frontend HTML:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `DRASHTA_API` (Groq API key used by the existing backend)
+- `GROQ_MODEL` (optional; defaults to `openai/gpt-oss-120b`)
+
+## Local checks
+
+Run `npm install`, then `npm test`. Run the app in the project's supported serverless environment so `/api/ask` is available.
+
+## Supabase warning
+
+The project owner has confirmed these tables already exist: `conversations`, `feedback`, `knowledge_base`, `messages`, `usage_daily`, and `user_kundli_charts`. This package does not automatically create or alter tables. Do not run the included migration blindly against an already configured database. The live schema, column names, constraints, RLS policies, and service-role access were not available for inspection in this workspace and must be verified in the actual Supabase project.
+
+## Current implementation limits
+
+- The API now requires chart calculation plus a successful `user_kundli_charts` save before reporting a successful intake.
+- The frontend sends recent local chat history to the AI request, but server-side message persistence/retrieval through the existing `messages` table is not implemented in this package because its actual column schema was not provided. Browser localStorage alone is not equivalent to durable server-side chat history.
+- Feedback controls exist in the frontend, but the backend's `feedback` action still needs to be matched to the actual `feedback` table schema.
+- Live VedAstro, geocoding, Groq, Supabase read/write, deployed browser flow, and cross-user isolation have not been tested from this workspace. Do not treat local unit tests as live integration proof.
+- The current anonymous browser-token approach is a session identifier, not account authentication. Do not treat it as proof of a verified real-world user identity.

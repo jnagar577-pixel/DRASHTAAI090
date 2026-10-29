@@ -40,7 +40,7 @@ export function formatStdTime(dob, birthTime, tzOffset = '+05:30') {
   const [year, month, day] = dob.split('-');
   const [hh, mm] = cleanTime.split(':');
   let formattedOffset = tzOffset;
-  const match = tzOffset.match(/^([+-])(\\d{1,2}):?(\\d{2})?$/);
+  const match = tzOffset.match(/^([+-])(\d{1,2}):?(\d{2})?$/);
   if (match) {
     formattedOffset = `${match[1]}${match[2].padStart(2, '0')}:${match[3] || '00'}`;
   }
@@ -51,7 +51,7 @@ export function parseBirthTimestamp(dob, birthTime, tzOffset = '+05:30') {
   const [year, month, day] = dob.split('-').map(Number);
   const [hh, mm] = (birthTime || '12:00').slice(0, 5).split(':').map(Number);
   let offsetMinutes = 330;
-  const match = tzOffset.match(/^([+-])(\\d{1,2}):?(\\d{2})?$/);
+  const match = tzOffset.match(/^([+-])(\d{1,2}):?(\d{2})?$/);
   if (match) {
     const sign = match[1] === '-' ? -1 : 1;
     offsetMinutes = sign * (parseInt(match[2], 10) * 60 + (match[3] ? parseInt(match[3], 10) : 0));
@@ -59,23 +59,64 @@ export function parseBirthTimestamp(dob, birthTime, tzOffset = '+05:30') {
   return Date.UTC(year, month - 1, day, hh, mm, 0, 0) - (offsetMinutes * 60 * 1000);
 }
 
-export async function resolveLocation(placeName) {
+function timezoneOffsetAtLocalBirth(timeZone, dob, birthTime) {
+  if (typeof timeZone !== 'string' || !timeZone.trim()) throw new Error('Birthplace timezone could not be determined.');
+  const [year, month, day] = dob.split('-').map(Number);
+  const [hour, minute] = birthTime.slice(0, 5).split(':').map(Number);
+  const targetLocalAsUtc = Date.UTC(year, month - 1, day, hour, minute, 0, 0);
+  let utcGuess = targetLocalAsUtc;
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+  });
+  let offsetMinutes = null;
+  for (let i = 0; i < 3; i++) {
+    const parts = Object.fromEntries(formatter.formatToParts(new Date(utcGuess)).map(part => [part.type, part.value]));
+    const formattedLocalAsUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+    offsetMinutes = Math.round((formattedLocalAsUtc - utcGuess) / 60000);
+    utcGuess = targetLocalAsUtc - offsetMinutes * 60000;
+  }
+  const sign = offsetMinutes < 0 ? '-' : '+';
+  const abs = Math.abs(offsetMinutes);
+  return `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+}
+
+export async function resolveLocation(placeName, dob, birthTime) {
   if (!placeName || placeName.trim().length < 2) {
     throw new Error('Kripya apna janm sthan spasht likhein.');
   }
   const cleanPlace = placeName.trim();
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanPlace)}&count=1&language=en&format=json`;
+  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanPlace)}&count=10&language=en&format=json`;
   const res = await fetchWithTimeout(url);
+  if (!res.ok) throw new Error('Birthplace geocoding service is unavailable.');
   const json = await res.json();
   if (!json.results || json.results.length === 0) {
     throw new Error(`Janm sthan '${cleanPlace}' ko map par khoja nahi ja saka.`);
   }
-  const r = json.results[0];
+
+  const queryParts = cleanPlace.split(',').map(part => part.trim().toLowerCase()).filter(Boolean);
+  const candidates = json.results;
+  let result = candidates[0];
+  if (queryParts.length > 1) {
+    const matched = candidates.find(candidate => {
+      const searchable = [candidate.name, candidate.admin1, candidate.admin2, candidate.country]
+        .filter(Boolean).join(',').toLowerCase();
+      return queryParts.every(part => searchable.includes(part));
+    });
+    if (matched) result = matched;
+  } else {
+    const exact = candidates.filter(candidate => String(candidate.name || '').toLowerCase() === queryParts[0]);
+    if (exact.length === 1) result = exact[0];
+    else if (exact.length > 1) throw new Error(`'${cleanPlace}' naam ke kai sthan mile. Kripya City, State/Region likhein.`);
+  }
+
+  if (!result.timezone) throw new Error('Is janm sthan ka timezone verify nahi ho saka. Kripya sthan ko State/Region ke saath dobara likhein.');
   return {
-    name: `${r.name}, ${r.country || ''}`.trim().replace(/,\\s*$/, ''),
-    latitude: parseFloat(r.latitude.toFixed(4)),
-    longitude: parseFloat(r.longitude.toFixed(4)),
-    timezoneOffset: '+05:30'
+    name: [result.name, result.admin1, result.country].filter(Boolean).filter((value, index, array) => array.indexOf(value) === index).join(', '),
+    latitude: Number(Number(result.latitude).toFixed(4)),
+    longitude: Number(Number(result.longitude).toFixed(4)),
+    timezoneOffset: timezoneOffsetAtLocalBirth(result.timezone, dob, birthTime),
+    timezone: result.timezone
   };
 }
 

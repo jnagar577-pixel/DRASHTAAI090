@@ -936,7 +936,7 @@ const K_STATE = 'drashta_state';
 const K_TOKEN = 'drashta_token';
 const DAILY_LIMIT = 100;
 const RASHIS = ['मेष','वृषभ','मिथुन','कर्क','सिंह','कन्या','तुला','वृश्चिक','धनु','मकर','कुंभ','मीन'];
-const GREETING = 'Namaste! Main <b>Turiya AI</b> hoon, Swami Atma Jagran ka sathi. Aapke consultation mein bahut bahut swagat hai 🙏<br><br>Neeche apni kundli ki jaankari bhariye, ya seedha apna sawal likhiye.';
+const GREETING = 'Namaste! Main <b>Turiya AI</b> hoon, Swami Atma Jagran ka sathi 🙏<br><br>Shuru karne ke liye <b>Hey</b> likhiye.';
 
 const FEATURES = [
   {icon:'🪔', label:'Kundli Saar', sub:'Ek nazar mein poora saar',
@@ -967,7 +967,7 @@ function loadState(){
     const s = JSON.parse(localStorage.getItem(K_STATE) || 'null');
     if(s && Array.isArray(s.history)) return s;
   }catch(e){}
-  return {history:[], intakeDone:false, intake:null, remaining:DAILY_LIMIT};
+  return {history:[], intakeDone:false, intakeRequested:false, intake:null, remaining:DAILY_LIMIT};
 }
 const state = loadState();
 function save(){ try{ localStorage.setItem(K_STATE, JSON.stringify(state)); }catch(e){} }
@@ -1227,10 +1227,7 @@ function renderChartCard(data){
   scrollDown();
 }
 
-/* ---------- INTAKE FORM ---------- */
-function opts(list, selected=''){
-  return '<option value="">Chunein</option>' + list.map(r => `<option value="${r}"${r===selected?' selected':''}>${r}</option>`).join('');
-}
+/* ---------- UPDATED INTAKE FORM HELPERS ---------- */
 function renderIntake(p = {}){
   if($('intakeRow')) return;
   const row = document.createElement('div');
@@ -1239,19 +1236,17 @@ function renderIntake(p = {}){
     <div class="avatar">ॐ</div>
     <div class="bubble bot intake">
       <p><b>Apni kundli ki jaankari bhariye</b></p>
-      <p class="hint">Jo aap jaante hain wahi bhariye, baaki khaali chhod sakte hain. Sare * wale fields zaroori hain.</p>
+      <p class="hint">Janm samay aur sthan zaroori hain taaki aapka sahi Lagan aur grah sthiti calculate ho sake.</p>
       <div class="grid2">
-        <label class="field">Shubh naam *<input id="f_name" type="text" maxlength="100" autocomplete="name"></label>
+        <label class="field">Shubh naam *<input id="f_name" type="text" maxlength="100" autocomplete="name" placeholder="Aapka naam"></label>
         <label class="field">Janm tithi *<input id="f_dob" type="date"></label>
-        <label class="field">Janm samay<input id="f_time" type="time"></label>
-        <label class="field">Janm sthan<input id="f_place" type="text" maxlength="150" placeholder="Shahar, rajya"></label>
-        <label class="field">Lagan rashi *<select id="f_lagan">${opts(RASHIS, p.lagan_rashi)}</select></label>
-        <label class="field">Chandra rashi<select id="f_moon">${opts(RASHIS, p.moon_rashi)}</select></label>
-        <label class="field full">Kundli ya report ka text (optional)<textarea id="f_notes" rows="4" maxlength="8000" placeholder="Agar aapke paas report ya kundli ka text hai to yahan paste kar dijiye"></textarea></label>
+        <label class="field">Janm samay *<input id="f_time" type="time"></label>
+        <label class="field">Janm sthan (City, State) *<input id="f_place" type="text" maxlength="150" placeholder="Udaharan: New Delhi, Delhi"></label>
+        <label class="field full">Kundli ya report ka text (optional)<textarea id="f_notes" rows="3" maxlength="8000" placeholder="Agar aapke paas pehle se koi astrological report hai toh yahan paste kar sakte hain"></textarea></label>
       </div>
       <label class="consent"><input type="checkbox" id="f_consent"> Main sahmat hoon ki meri di gayi jaankari sirf is margdarshan ke liye use ho. Main ise kabhi bhi "Nayi shuruaat" se hata sakta hoon.</label>
       <p class="err" id="f_err" hidden></p>
-      <button class="btn-primary" id="f_submit">Kundli bhejein</button>
+      <button class="btn-primary" id="f_submit">Kundli Calculate Karein</button>
     </div>`;
   chatBox.appendChild(row);
   $('f_name').value = p.name || '';
@@ -1269,14 +1264,13 @@ function readIntake(){
     dob: $('f_dob').value,
     birth_time: $('f_time').value,
     birth_place: $('f_place').value.trim(),
-    lagan: $('f_lagan').value,
-    moon_rashi: $('f_moon').value,
     notes: $('f_notes').value.trim(),
   };
-  if(!v.name) return {error:'Kripya apna naam likhiye.'};
-  if(!v.dob) return {error:'Janm tithi chunein.'};
-  if(!v.lagan) return {error:'Lagan rashi chunein. Agar pata na ho to kundli ya report mein dekh kar bhariye.'};
-  if(!$('f_consent').checked) return {error:'Aage badhne ke liye upar sahmati (consent) dena zaroori hai.'};
+  if(!v.name) return {error:'Kripya apna shubh naam darj karein.'};
+  if(!v.dob) return {error:'Janm tithi chunna anivarya hai.'};
+  if(!v.birth_time) return {error:'Sahi Lagan nikalne ke liye janm samay anivarya hai.'};
+  if(!v.birth_place) return {error:'Janm sthan (City, State) darj karein.'};
+  if(!$('f_consent').checked) return {error:'Aage badhne ke liye sahmati (consent) par tick lagana zaroori hai.'};
   return {data: v};
 }
 
@@ -1286,37 +1280,39 @@ async function submitIntake(){
   const v = readIntake();
   if(v.error){ err.textContent = v.error; err.hidden = false; return; }
   err.hidden = true;
-  btn.disabled = true; btn.textContent = 'Bheja ja raha hai…';
+  btn.disabled = true; btn.textContent = 'Kundli banayi ja rahi hai…';
+
   try{
     const r = await api({action:'intake', ...v.data, consent:true});
+
+    // Only accept a complete chart after the backend confirms persistence.
+    if(!r.chart || !r.chart.d1 || !r.chart.d9 || !r.chart.lagan || !Array.isArray(r.chart.dasha) || !r.chart.dasha.length || r.chart.persisted !== true){
+      throw new Error(r.error || 'Kundli ka poora data aur database save verify nahi ho saka. Kripya dobara koshish karein.');
+    }
+
     const prev = state.intake;
     const sameUser = !!prev && prev.name === v.data.name && prev.dob === v.data.dob;
     if (prev && !sameUser) { state.history = []; chatBox.innerHTML = ''; clearChips(); }
+
     state.intakeDone = true;
-    state.intake = v.data;
+    state.intakeRequested = true;
+    state.intake = { ...v.data, lagan: r.chart.lagan };
     save();
+
     $('intakeRow')?.remove();
-    const msg = `Dhanyavaad ${v.data.name} ji 🙏 Aapki jaankari yeh rahi:\n\n${r.summary}\n\nKya ye sahi hai?`;
+
+    const msg = `Dhanyavaad ${v.data.name} ji 🙏 Aapki kundli calculate hokar database mein save ho gayi hai.\n\nLagna: **${r.chart.lagan}**`;
     addBot(msg);
     pushHistory('bot', msg);
+
     renderNumCard(r.numerology);
-    renderChartCard(r.chart ? {name:v.data.name, lagan:r.chart.lagan, d1:r.chart.d1} : null);
-    setChips(['✓ Haan, sahi hai','✎ Kuch badalna hai'], label => {
-      clearChips();
-      if(label.startsWith('✓')){
-        addUser('Haan, sahi hai'); pushHistory('user','Haan, sahi hai');
-        botSay('Bahut achha. Ab neeche se koi vishay chunein, ya seedha apna sawal likhein 🙏');
-        renderFeatures();
-        scrollDown();
-      } else {
-        addUser('Kuch badalna hai'); pushHistory('user','Kuch badalna hai');
-        renderIntake(state.intake);
-      }
-    });
+    renderChartCard({name: v.data.name, lagan: r.chart.lagan, d1: r.chart.d1});
+    botSay('आपकी जन्म-कुंडली तैयार है। अब आप अपना सवाल पूछिए। आप किस विषय के बारे में जानना चाहते हैं?');
     renderFeatures();
+    scrollDown();
   }catch(e){
     err.textContent = e.message; err.hidden = false;
-    btn.disabled = false; btn.textContent = 'Kundli bhejein';
+    btn.disabled = false; btn.textContent = 'Kundli Calculate Karein';
   }
 }
 
@@ -1337,7 +1333,9 @@ async function sendChat(query, display){
 async function askBackend(query, {followups=true} = {}){
   showThinking();
   try{
-    const r = await api({action:'chat', query});
+    const history = state.history.slice(-12).map(item => ({role:item.role, text:item.text}));
+    if(history.length && history[history.length - 1].role === 'user') history[history.length - 1].text = query;
+    const r = await api({action:'chat', query, history});
     hideThinking();
     state.remaining = r.remaining; renderLimit();
     addBot(r.text, {id: r.messageId});
@@ -1382,8 +1380,8 @@ function boot(){
   } else {
     botSay(GREETING);
   }
-  if(!state.intakeDone) renderIntake(state.intake || {});
-  else scrollDown();
+  if(!state.intakeDone && state.intakeRequested) renderIntake(state.intake || {});
+  else if(state.intakeDone) scrollDown();
 }
 
 /* ---------- INPUT ---------- */
@@ -1392,6 +1390,16 @@ function handleSubmit(){
   const text = input.value.trim();
   if(!text) return;
   input.value = ''; autosize();
+  if(!state.intakeDone){
+    addUser(text); pushHistory('user', text);
+    state.intakeRequested = true; save();
+    const isHey = /^(hey|hi|hello|namaste|नमस्ते)[!.\s]*$/i.test(text);
+    botSay(isHey
+      ? 'नमस्ते! आपका Turiya AI में स्वागत है। कृपया अपनी जन्म-विवरण भरिए।'
+      : 'नमस्ते! आपकी व्यक्तिगत कुंडली के आधार पर मार्गदर्शन देने से पहले कृपया अपनी जन्म-विवरण भरिए।');
+    renderIntake(state.intake || {});
+    return;
+  }
   sendChat(text);
 }
 $('sendBtn').onclick = handleSubmit;
