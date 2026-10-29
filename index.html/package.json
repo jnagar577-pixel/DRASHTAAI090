@@ -1,6 +1,9 @@
 {
-  "name": "drashta-ai-backend",
+  "name": "turiya-ai-backend",
   "version": "1.0.0",
   "type": "module",
-  "private": true
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
 }
