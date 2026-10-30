@@ -85,8 +85,49 @@ export async function resolveLocation(placeName, dob, birthTime) {
   if (!placeName || placeName.trim().length < 2) {
     throw new Error('Kripya apna janm sthan spasht likhein.');
   }
+
   const cleanPlace = placeName.trim();
-  const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanPlace)}&count=10&language=en&format=json`;
+  const normalizeLocationPart = value => value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\\s+/g, ' ');
+  const indianStatesAndTerritories = [
+    'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Dadra and Nagar Haveli and Daman and Diu',
+    'Jammu and Kashmir', 'Madhya Pradesh', 'Himachal Pradesh', 'Uttar Pradesh', 'West Bengal',
+    'Chandigarh', 'Chhattisgarh', 'Puducherry', 'Lakshadweep', 'Delhi', 'Ladakh',
+    'Assam', 'Bihar', 'Goa', 'Gujarat', 'Haryana', 'Jharkhand', 'Karnataka', 'Kerala',
+    'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan',
+    'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttarakhand', 'Maharashtra'
+  ];
+
+  let requestedCity = '';
+  let requestedState = '';
+  const commaParts = cleanPlace.split(',').map(part => part.trim()).filter(Boolean);
+
+  if (commaParts.length >= 2) {
+    requestedCity = commaParts[0];
+    requestedState = commaParts.slice(1).join(', ');
+  } else {
+    const normalizedInput = normalizeLocationPart(cleanPlace);
+    const matchingState = indianStatesAndTerritories
+      .slice()
+      .sort((a, b) => b.length - a.length)
+      .find(state => normalizedInput.endsWith(normalizeLocationPart(state)));
+
+    if (matchingState) {
+      const stateSuffix = normalizeLocationPart(matchingState);
+      const normalizedCity = normalizedInput.slice(0, -stateSuffix.length).trim();
+      if (normalizedCity) {
+        requestedCity = cleanPlace.slice(0, cleanPlace.toLowerCase().lastIndexOf(matchingState.toLowerCase())).trim();
+        requestedState = matchingState;
+      }
+    }
+  }
+
+  let url;
+  if (requestedCity && requestedState) {
+    url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(requestedCity)}&count=10&language=en&format=json`;
+  } else {
+    url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cleanPlace)}&count=10&language=en&format=json`;
+  }
+
   const res = await fetchWithTimeout(url);
   if (!res.ok) throw new Error('Birthplace geocoding service is unavailable.');
   const json = await res.json();
@@ -94,20 +135,32 @@ export async function resolveLocation(placeName, dob, birthTime) {
     throw new Error(`Janm sthan '${cleanPlace}' ko map par khoja nahi ja saka.`);
   }
 
-  const queryParts = cleanPlace.split(',').map(part => part.trim().toLowerCase()).filter(Boolean);
   const candidates = json.results;
-  let result = candidates[0];
-  if (queryParts.length > 1) {
-    const matched = candidates.find(candidate => {
-      const searchable = [candidate.name, candidate.admin1, candidate.admin2, candidate.country]
-        .filter(Boolean).join(',').toLowerCase();
-      return queryParts.every(part => searchable.includes(part));
-    });
-    if (matched) result = matched;
+  let result;
+
+  if (requestedCity && requestedState) {
+    const cityKey = normalizeLocationPart(requestedCity);
+    const stateKey = normalizeLocationPart(requestedState);
+    const matched = candidates.filter(candidate =>
+      normalizeLocationPart(String(candidate.name || '')) === cityKey &&
+      normalizeLocationPart(String(candidate.admin1 || '')) === stateKey &&
+      normalizeLocationPart(String(candidate.country || '')) === 'india'
+    );
+
+    if (matched.length === 0) {
+      throw new Error(`'${cleanPlace}' ke liye city aur state ka exact match verify nahi ho saka. Kripya City, State/Region dobara check karein.`);
+    }
+    if (matched.length > 1) {
+      throw new Error(`'${cleanPlace}' naam ke kai matching sthan mile. Kripya aur spasht birthplace likhein.`);
+    }
+    result = matched[0];
   } else {
-    const exact = candidates.filter(candidate => String(candidate.name || '').toLowerCase() === queryParts[0]);
+    const queryKey = normalizeLocationPart(cleanPlace);
+    const exact = candidates.filter(candidate => normalizeLocationPart(String(candidate.name || '')) === queryKey);
     if (exact.length === 1) result = exact[0];
     else if (exact.length > 1) throw new Error(`'${cleanPlace}' naam ke kai sthan mile. Kripya City, State/Region likhein.`);
+    else if (candidates.length === 1) result = candidates[0];
+    else throw new Error(`'${cleanPlace}' naam ke kai sambhavit sthan mile. Kripya City, State/Region likhein.`);
   }
 
   if (!result.timezone) throw new Error('Is janm sthan ka timezone verify nahi ho saka. Kripya sthan ko State/Region ke saath dobara likhein.');
