@@ -14,7 +14,7 @@ const PLANETS = {
 };
 
 function sumDigits(n) {
-  let s = String(n).replace(/\\D/g, '');
+  let s = String(n).replace(/\D/g, '');
   while (s.length > 1) {
     s = String(s.split('').reduce((a, b) => a + Number(b), 0));
   }
@@ -22,8 +22,11 @@ function sumDigits(n) {
 }
 
 export function computeNumerology(dobStr) {
-  if (!dobStr || !/^\\d{4}-\\d{2}-\\d{2}$/.test(dobStr)) return null;
+  if (typeof dobStr !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dobStr)) return null;
   const [year, month, day] = dobStr.split('-').map(Number);
+  const date = new Date(`${dobStr}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== dobStr) return null;
+
   const mulank = sumDigits(day);
   const bhagyank = sumDigits(day + month + year);
 
