@@ -1,0 +1,191 @@
+{
+  "entities": {
+    "conversation": {
+      "title": "Conversation",
+      "description": "User consultation session and birth chart intake details",
+      "type": "object",
+      "properties": {
+        "token_hash": {
+          "type": "string",
+          "description": "SHA-256 hash of user browser session token"
+        },
+        "name": {
+          "type": "string",
+          "description": "User full name"
+        },
+        "dob": {
+          "type": "string",
+          "description": "Date of birth in YYYY-MM-DD format"
+        },
+        "birth_time": {
+          "type": "string",
+          "description": "Birth time in HH:MM format"
+        },
+        "birth_place": {
+          "type": "string",
+          "description": "Birth location city and state"
+        },
+        "lagan_rashi": {
+          "type": "string",
+          "description": "Ascendant sign (Lagna)"
+        },
+        "moon_rashi": {
+          "type": "string",
+          "description": "Moon sign (Chandra rashi)"
+        },
+        "chart_summary": {
+          "type": "string",
+          "description": "Structured summary of chart indicators"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Lagan Maya Sutra or prompt notes"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "Last update ISO timestamp"
+        }
+      },
+      "required": ["token_hash"]
+    },
+    "message": {
+      "title": "Message",
+      "description": "Consultation exchange message between user and Drashta AI",
+      "type": "object",
+      "properties": {
+        "conversation_id": {
+          "type": "string",
+          "description": "Associated conversation document ID"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "assistant"],
+          "description": "Message sender role"
+        },
+        "content": {
+          "type": "string",
+          "description": "Message text content"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Message creation ISO timestamp"
+        }
+      },
+      "required": ["conversation_id", "role", "content"]
+    },
+    "feedback": {
+      "title": "Feedback",
+      "description": "User helpfulness rating on advice given",
+      "type": "object",
+      "properties": {
+        "message_id": {
+          "type": "string",
+          "description": "Message ID receiving feedback"
+        },
+        "helpful": {
+          "type": "boolean",
+          "description": "Whether the answer was helpful"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Submission ISO timestamp"
+        }
+      },
+      "required": ["message_id", "helpful"]
+    },
+    "usage": {
+      "title": "Usage",
+      "description": "Daily consultation usage rate counter",
+      "type": "object",
+      "properties": {
+        "hash": {
+          "type": "string",
+          "description": "Token hash identifier"
+        },
+        "day": {
+          "type": "string",
+          "description": "UTC date YYYY-MM-DD"
+        },
+        "count": {
+          "type": "integer",
+          "description": "Number of requests performed today"
+        }
+      },
+      "required": ["hash", "day", "count"]
+    },
+    "knowledge": {
+      "title": "KnowledgeBase",
+      "description": "Vedic Jyotish reference and Swami Atma Jagran teachings",
+      "type": "object",
+      "properties": {
+        "topic": {
+          "type": "string",
+          "description": "Topic or rule title"
+        },
+        "content": {
+          "type": "string",
+          "description": "Topic details and guidelines"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Whether this rule is currently active"
+        }
+      },
+      "required": ["topic", "content"]
+    },
+    "user_kundli_chart": {
+      "title": "UserKundliChart",
+      "description": "Calculated planetary coordinates and D1/D9 chart data",
+      "type": "object",
+      "properties": {
+        "user_token_hash": {
+          "type": "string",
+          "description": "Session token hash"
+        },
+        "name": {
+          "type": "string",
+          "description": "User name"
+        },
+        "dob": {
+          "type": "string",
+          "description": "Birth date"
+        },
+        "birth_time": {
+          "type": "string",
+          "description": "Birth time"
+        },
+        "birth_place": {
+          "type": "string",
+          "description": "Birth location"
+        }
+      },
+      "required": ["user_token_hash", "dob"]
+    }
+  },
+  "firestore": {
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/conversation" },
+      "description": "Stores user consultation session data"
+    },
+    "/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/message" },
+      "description": "Stores conversation messages"
+    },
+    "/feedback/{feedbackId}": {
+      "schema": { "$ref": "#/entities/feedback" },
+      "description": "Stores helpful/unhelpful ratings"
+    },
+    "/usage/{usageId}": {
+      "schema": { "$ref": "#/entities/usage" },
+      "description": "Tracks daily message rate limit"
+    },
+    "/knowledge_base/{knowledgeId}": {
+      "schema": { "$ref": "#/entities/knowledge" },
+      "description": "Knowledge base entries"
+    },
+    "/user_kundli_charts/{chartId}": {
+      "schema": { "$ref": "#/entities/user_kundli_chart" },
+      "description": "Calculated Kundli charts"
+    }
+  }
+}

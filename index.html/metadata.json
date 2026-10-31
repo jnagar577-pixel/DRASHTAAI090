@@ -1,0 +1,7 @@
+{
+  "name": "Turiya AI — Swami Atma Jagran",
+  "description": "Vedic astrology and spiritual guidance assistant featuring Lagna D1 Kundli analysis, numerology, and conversational consultation.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
