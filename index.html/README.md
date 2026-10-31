@@ -1,40 +1,103 @@
-# Turiya AI
+# Drashta AI — Swami Atma Jagran
 
-Existing Turiya AI frontend and serverless backend. The UI is preserved from the supplied project HTML; the intake flow and backend error handling have been tightened.
+Vedic jyotish margdarshan chatbot. Frontend static hai, backend Vercel serverless function (`api/ask.js`) hai, aur memory Supabase mein store hoti hai.
 
-## Project files
+## Folder structure
+```
+index.html            Frontend (chat, intake form, feature buttons)
+api/ask.js            Backend: chat, intake, feedback, delete (Groq + Supabase)
+supabase/schema.sql   Database tables aur functions
+tests/ask.test.mjs    Backend tests (mock Supabase + Groq, internet ki zaroorat nahi)
+package.json
+```
 
-- `index.html`: complete frontend application.
-- `api/ask.js`: serverless chat/intake API. Privileged Supabase access remains server-side.
-- `lib/vedastro.js`: VedAstro client and chart calculations, including birth-location timezone offset handling.
-- `lib/kundli-service.js`: chart validation, Supabase persistence/cache, and chart context formatting.
-- `lib/numerology.js`: existing numerology helper.
-- `supabase/schema.sql`: core conversation and message tables used by the backend.
-- `supabase/migration_v9_kundli_engine.sql`: adds the saved kundli chart table.
-- `tests/kundli.test.mjs`: existing calculation tests.
-- `.env.example`: names of required server environment variables, with no secrets.
+## Setup (ek baar)
 
-## Environment variables
+### 1. Supabase
+1. Supabase project banayiye.
+2. SQL Editor mein `supabase/schema.sql` ka poora content chalayiye.
+3. Project Settings → API se do cheezein lijiye:
+   - **Project URL** → `SUPABASE_URL`
+   - **service_role key** → `SUPABASE_SERVICE_ROLE_KEY` (ye secret hai, kabhi frontend ya GitHub mein nahi)
 
-Configure these in the serverless deployment environment, not in frontend HTML:
+### 2. Groq
+- console.groq.com par key banayiye. Ye `DRASHTA_API` naam se Vercel mein jayegi.
 
+### 3. Vercel → Settings → Environment Variables
+| Naam | Value | Type |
+|---|---|---|
+| `DRASHTA_API` | Groq key (`gsk_...`) | Secret |
+| `SUPABASE_URL` | Supabase Project URL | Plain |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role key | Secret |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` (optional, default yahi hai) | Plain |
+| `ALLOWED_ORIGINS` | Extra domains, comma se (optional) | Plain |
+| `DEBUG_ERRORS` | `1` sirf debugging ke liye, production mein nahi | Plain |
+
+Har variable ke liye **Production** environment tick kijiye. Phir **Redeploy** kijiye.
+
+Purane variables `GEMINI_MODEL` aur `GEMINI_API_KEY` ko delete kar dijiye.
+
+## Kaise kaam karta hai
+- Browser ek random token banata hai aur localStorage mein rakhta hai. Server us token ka SHA-256 hash Supabase mein store karta hai. Raw token server par kabhi save nahi hota.
+- Intake form ka data `conversations` table mein jaata hai. Summary sirf user ke diye fields se banti hai, model se nahi, taaki galat andaaze na lagen.
+- Har chat message ke saath server pichle 10 messages aur kundli data model ko bhejta hai. Isliye bot pichli baatein yaad rakhta hai.
+- Daily limit (100 messages) server par `bump_usage` function se track hoti hai.
+- "Nayi shuruaat" dabane par server se sara data (conversation, messages, feedback) delete ho jaata hai.
+
+## Testing
+```bash
+node --test tests/ask.test.mjs
+```
+Ye 13 tests check karte hain: token validation, consent, memory isolation, model fallback, daily limit, feedback ownership, delete, aur error handling.
+
+## Privacy
+- Chart ka data personal hai. Intake form mein consent lena zaroori hai.
+- Browser Supabase ko directly call nahi karta. Sab kuch `/api/ask` ke through hota hai.
+- Supabase tables par RLS on hai, aur anon key se koi access nahi hai.
+- Privacy policy ka legal text alag se banwayiye, ise Digital Personal Data Protection Act 2023 ke hisaab se review karwayiye.
+
+## Limitations
+- Token browser ke localStorage mein hai. Agar user browser data clear kare to memory chali jaayegi. Login system baad mein add kar sakte hain.
+- Daily limit token par hai, user par nahi.
+
+## Troubleshooting: "Server setup adhoora hai"
+
+Ye error tab aata hai jab server par zaroori variable set nahi hota ya Supabase se connect nahi ho pata.
+
+**Step 1: Health check kholiye.** Browser mein ye URL kholiye (apni site ka naam daalkar):
+```
+https://YOUR-SITE.vercel.app/api/ask
+```
+Ye JSON dikhayega, jaise:
+```json
+{ "ok": false, "env": { "SUPABASE_URL": true, "SUPABASE_SERVICE_ROLE_KEY": false, "DRASHTA_API": true }, "database": "skipped (Supabase env missing)" }
+```
+- `false` wala variable Vercel mein galat naam se ya Production environment mein nahi hai.
+- `database: "error (HTTP 401)"` ka matlab key galat hai. `HTTP 404` ka matlab schema nahi chala ya URL galat hai.
+- Value kabhi nahi dikhayi jaati, sirf true/false.
+
+**Step 2: Vercel variables.** Naam bilkul ye hone chahiye (capital letters, underscore):
 - `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `DRASHTA_API` (Groq API key used by the existing backend)
-- `GROQ_MODEL` (optional; defaults to `openai/gpt-oss-120b`)
+- `SUPABASE_SERVICE_ROLE_KEY` (Secret)
+- `DRASHTA_API`
 
-## Local checks
+Har ek ke liye **Production** tick hona chahiye. Variable badalne ke baad **Redeploy** (cache off) zaroor karein.
 
-Run `npm install`, then `npm test`. Run the app in the project's supported serverless environment so `/api/ask` is available.
+**Step 3: Supabase.** `supabase/schema.sql` SQL Editor mein chal chuka hona chahiye. Health check mein `database: ok` aana chahiye.
 
-## Supabase warning
+## Health check ka matlab (v5)
+`/api/ask` (GET) ab 3 cheezein check karta hai: env variables, Supabase database (`conversations` table), aur Groq key (`groq: ok`). `rpc: ok` ka matlab `bump_usage` function kaam kar raha hai. Koi bhi `ok` nahi hai to `ok: false` aayega aur wajah field mein dikhegi.
 
-The connected Supabase project inspection available during this fix returned no tables and no migration records. This does not prove that no tables exist in another project or deployment, but the app cannot retrieve or delete server-side data unless the configured project contains the expected schema. Review `supabase/schema.sql` and `supabase/migration_v9_kundli_engine.sql` against the intended project before running either. Neither file was run against the live database as part of this fix.
+## Debug mode
+Vercel mein `DEBUG_ERRORS` = `1` set karke redeploy karein. Tab chat mein error ke saath asli wajah `[debug: ...]` mein dikhegi. Problem solve hone par `DEBUG_ERRORS` hata dein.
 
-## Current implementation limits
+## Brand knowledge (v6)
+Swami ji, website, reports aur consultation ki jaankari ab Supabase ki `knowledge_base` table mein hai. Setup ke liye `supabase/migration_v6_knowledge.sql` SQL Editor mein chalayein. Baad mein Table Editor se `content` edit karke koi bhi jaankari badal sakte hain, redeploy ki zaroorat nahi. Upay sirf tab aate hain jab user khud poochhe.
 
-- The API now requires chart calculation plus a successful `user_kundli_charts` save before reporting a successful intake. Conversation reads/writes now use the schema’s `token_hash` and `chart_summary` columns, and deletion explicitly removes linked `messages` before deleting the conversation.
-- The frontend sends recent local chat history to the AI request, but server-side message persistence/retrieval through the existing `messages` table is not implemented in this package because its actual column schema was not provided. Browser localStorage alone is not equivalent to durable server-side chat history.
-- Feedback controls exist in the frontend, but the backend's `feedback` action still needs to be matched to the actual `feedback` table schema.
-- Live VedAstro, geocoding, Groq, Supabase read/write, deployed browser flow, and cross-user isolation have not been tested from this workspace. Do not treat local unit tests as live integration proof.
-- The current anonymous browser-token approach is a session identifier, not account authentication. Do not treat it as proof of a verified real-world user identity.
+## v7 changes
+- Lagan se bhav ki table code se banti hai (`भाव तालिका`). Bot bhav/swami khud nahi nikalta.
+- Naam ya janm tithi badalne par purani baatcheet apne-aap hat jaati hai (naye insaan ke liye).
+- Agar paste kiya hua text form ke lagan se mel na khaye, to bot batata hai aur mix nahi karta.
+
+## v8: Ank jyotish (numerology)
+Intake ke baad summary ke saath Mulank (janm din ka ank) aur Bhagyank (puri janm tithi ka ank) ka card dikhta hai. Logic `lib/numerology.js` mein hai. Gemstone (ratna) jaan-bujh kar nahi dikhaya gaya.

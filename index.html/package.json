@@ -1,12 +1,6 @@
 {
-  "name": "turiya-ai-backend",
+  "name": "drashta-ai-backend",
   "version": "1.0.0",
   "type": "module",
-  "private": true,
-  "scripts": {
-    "test": "node --test tests/*.test.mjs"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.57.0"
-  }
+  "private": true
 }

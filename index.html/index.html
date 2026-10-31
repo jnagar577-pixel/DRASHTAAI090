@@ -936,7 +936,7 @@ const K_STATE = 'drashta_state';
 const K_TOKEN = 'drashta_token';
 const DAILY_LIMIT = 100;
 const RASHIS = ['मेष','वृषभ','मिथुन','कर्क','सिंह','कन्या','तुला','वृश्चिक','धनु','मकर','कुंभ','मीन'];
-const GREETING = 'Namaste! Main <b>Turiya AI</b> hoon, Swami Atma Jagran ka sathi 🙏<br><br>Shuru karne ke liye <b>Hey</b> likhiye.';
+const GREETING = 'Namaste! Main <b>Turiya AI</b> hoon, Swami Atma Jagran ka sathi. Aapke consultation mein bahut bahut swagat hai 🙏<br><br>Neeche apni kundli ki jaankari bhariye, ya seedha apna sawal likhiye.';
 
 const FEATURES = [
   {icon:'🪔', label:'Kundli Saar', sub:'Ek nazar mein poora saar',
@@ -967,7 +967,7 @@ function loadState(){
     const s = JSON.parse(localStorage.getItem(K_STATE) || 'null');
     if(s && Array.isArray(s.history)) return s;
   }catch(e){}
-  return {history:[], intakeDone:false, intakeRequested:false, intake:null, remaining:DAILY_LIMIT};
+  return {history:[], intakeDone:false, intake:null, remaining:DAILY_LIMIT};
 }
 const state = loadState();
 function save(){ try{ localStorage.setItem(K_STATE, JSON.stringify(state)); }catch(e){} }
@@ -1145,7 +1145,7 @@ function renderNumCard(n){
 /* ---------- D1 CHART CARD (lagna + bhav; grah abhi nahi) ---------- */
 // Positions 400x400 box mein, North-Indian diamond ke 12 bhav (bhav 1 se 12)
 const CHART_HOUSE_POS = [[203,99],[105,69],[72,103],[105,197],[74,301],[105,325],[203,294],[300,328],[330,294],[305,197],[335,99],[305,69]];
-function chartSVG(lagan, size, forDownload, d1){
+function chartSVG(lagan, size, forDownload){
   const li = RASHIS.indexOf(lagan);
   if(li < 0) return '';
   const gold = '#d8b66d', goldHi = '#ffe8ae', muted = '#aebbd0', bg = '#08142a';
@@ -1156,11 +1156,6 @@ function chartSVG(lagan, size, forDownload, d1){
     if(n === 0) t += `<text x="${x}" y="${y - 18}" text-anchor="middle" font-size="11" fill="${gold}">लग्न</text>`;
     t += `<text x="${x}" y="${y}" text-anchor="middle" font-size="14" fill="${goldHi}" font-family="Work Sans,Arial,sans-serif">${sign}</text>`;
     t += `<text x="${x}" y="${y + 16}" text-anchor="middle" font-size="10" fill="${muted}">${n + 1}</text>`;
-    if(d1){
-      const planetNames = [['Sun','Su'],['Moon','Mo'],['Mars','Ma'],['Mercury','Me'],['Jupiter','Ju'],['Venus','Ve'],['Saturn','Sa'],['Rahu','Ra'],['Ketu','Ke']];
-      const housePlanets = planetNames.filter(([key]) => d1[key] && Number(d1[key].signIndex) === ((li + n) % 12) + 1).map(([,abbr]) => abbr);
-      if(housePlanets.length) t += `<text x="${x}" y="${y + 31}" text-anchor="middle" font-size="11" fill="${goldHi}" font-weight="600">${housePlanets.join(' ')}</text>`;
-    }
   }
   const bgRect = forDownload ? `<rect width="400" height="400" fill="${bg}"/>` : '';
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="${size}" height="${size}">`
@@ -1208,13 +1203,13 @@ function openChartFull(lagan){
   document.body.appendChild(ov);
 }
 function renderChartCard(data){
-  if(!data || !data.lagan || !data.d1 || !data.d1.Ascendant) return;
+  if(!data || !data.lagan) return;
   const row = document.createElement('div');
   row.className = 'chart-wrap';
   row.innerHTML = `
     <div class="chart-head">लग्न कुंडली (D1) · ${escapeHTML(data.name)}</div>
-    <div class="chart-svg">${chartSVG(data.lagan, '100%', false, data.d1)}</div>
-    <p class="chart-note">लग्न: ${escapeHTML(data.lagan)} · वास्तविक ग्रह स्थिति</p>
+    <div class="chart-svg">${chartSVG(data.lagan, '100%', false)}</div>
+    <p class="chart-note">लग्न: ${escapeHTML(data.lagan)} · ग्रह स्थिति जल्द जुड़ेगी</p>
     <div class="chart-actions">
       <button type="button" data-act="view">🔍 बड़ा देखें</button>
       <button type="button" data-act="png">⬇ PNG</button>
@@ -1227,7 +1222,10 @@ function renderChartCard(data){
   scrollDown();
 }
 
-/* ---------- UPDATED INTAKE FORM HELPERS ---------- */
+/* ---------- INTAKE FORM ---------- */
+function opts(list, selected=''){
+  return '<option value="">Chunein</option>' + list.map(r => `<option value="${r}"${r===selected?' selected':''}>${r}</option>`).join('');
+}
 function renderIntake(p = {}){
   if($('intakeRow')) return;
   const row = document.createElement('div');
@@ -1236,17 +1234,19 @@ function renderIntake(p = {}){
     <div class="avatar">ॐ</div>
     <div class="bubble bot intake">
       <p><b>Apni kundli ki jaankari bhariye</b></p>
-      <p class="hint">Janm samay aur sthan zaroori hain taaki aapka sahi Lagan aur grah sthiti calculate ho sake.</p>
+      <p class="hint">Jo aap jaante hain wahi bhariye, baaki khaali chhod sakte hain. Sare * wale fields zaroori hain.</p>
       <div class="grid2">
-        <label class="field">Shubh naam *<input id="f_name" type="text" maxlength="100" autocomplete="name" placeholder="Aapka naam"></label>
+        <label class="field">Shubh naam *<input id="f_name" type="text" maxlength="100" autocomplete="name"></label>
         <label class="field">Janm tithi *<input id="f_dob" type="date"></label>
-        <label class="field">Janm samay *<input id="f_time" type="time"></label>
-        <label class="field">Janm sthan (City, State) *<input id="f_place" type="text" maxlength="150" placeholder="Udaharan: New Delhi, Delhi"></label>
-        <label class="field full">Kundli ya report ka text (optional)<textarea id="f_notes" rows="3" maxlength="8000" placeholder="Agar aapke paas pehle se koi astrological report hai toh yahan paste kar sakte hain"></textarea></label>
+        <label class="field">Janm samay<input id="f_time" type="time"></label>
+        <label class="field">Janm sthan<input id="f_place" type="text" maxlength="150" placeholder="Shahar, rajya"></label>
+        <label class="field">Lagan rashi *<select id="f_lagan">${opts(RASHIS, p.lagan_rashi)}</select></label>
+        <label class="field">Chandra rashi<select id="f_moon">${opts(RASHIS, p.moon_rashi)}</select></label>
+        <label class="field full">Lagan Maya Sutra prompt / D1 kundli report (optional)<textarea id="f_notes" rows="7" maxlength="60000" placeholder="Apna Lagan Maya Sutra prompt ya D1 kundli report yahan paste karein"></textarea></label>
       </div>
       <label class="consent"><input type="checkbox" id="f_consent"> Main sahmat hoon ki meri di gayi jaankari sirf is margdarshan ke liye use ho. Main ise kabhi bhi "Nayi shuruaat" se hata sakta hoon.</label>
       <p class="err" id="f_err" hidden></p>
-      <button class="btn-primary" id="f_submit">Kundli Calculate Karein</button>
+      <button class="btn-primary" id="f_submit">Kundli bhejein</button>
     </div>`;
   chatBox.appendChild(row);
   $('f_name').value = p.name || '';
@@ -1264,13 +1264,14 @@ function readIntake(){
     dob: $('f_dob').value,
     birth_time: $('f_time').value,
     birth_place: $('f_place').value.trim(),
+    lagan: $('f_lagan').value,
+    moon_rashi: $('f_moon').value,
     notes: $('f_notes').value.trim(),
   };
-  if(!v.name) return {error:'Kripya apna shubh naam darj karein.'};
-  if(!v.dob) return {error:'Janm tithi chunna anivarya hai.'};
-  if(!v.birth_time) return {error:'Sahi Lagan nikalne ke liye janm samay anivarya hai.'};
-  if(!v.birth_place) return {error:'Janm sthan (City, State) darj karein.'};
-  if(!$('f_consent').checked) return {error:'Aage badhne ke liye sahmati (consent) par tick lagana zaroori hai.'};
+  if(!v.name) return {error:'Kripya apna naam likhiye.'};
+  if(!v.dob) return {error:'Janm tithi chunein.'};
+  if(!v.lagan) return {error:'Lagan rashi chunein. Agar pata na ho to kundli ya report mein dekh kar bhariye.'};
+  if(!$('f_consent').checked) return {error:'Aage badhne ke liye upar sahmati (consent) dena zaroori hai.'};
   return {data: v};
 }
 
@@ -1280,39 +1281,37 @@ async function submitIntake(){
   const v = readIntake();
   if(v.error){ err.textContent = v.error; err.hidden = false; return; }
   err.hidden = true;
-  btn.disabled = true; btn.textContent = 'Kundli banayi ja rahi hai…';
-
+  btn.disabled = true; btn.textContent = 'Bheja ja raha hai…';
   try{
     const r = await api({action:'intake', ...v.data, consent:true});
-
-    // Only accept a complete chart after the backend confirms persistence.
-    if(!r.chart || !r.chart.d1 || !r.chart.d9 || !r.chart.lagan || !Array.isArray(r.chart.dasha) || !r.chart.dasha.length || r.chart.persisted !== true){
-      throw new Error(r.error || 'Kundli ka poora data aur database save verify nahi ho saka. Kripya dobara koshish karein.');
-    }
-
     const prev = state.intake;
     const sameUser = !!prev && prev.name === v.data.name && prev.dob === v.data.dob;
     if (prev && !sameUser) { state.history = []; chatBox.innerHTML = ''; clearChips(); }
-
     state.intakeDone = true;
-    state.intakeRequested = true;
-    state.intake = { ...v.data, lagan: r.chart.lagan };
+    state.intake = v.data;
     save();
-
     $('intakeRow')?.remove();
-
-    const msg = `Dhanyavaad ${v.data.name} ji 🙏 Aapki kundli calculate hokar database mein save ho gayi hai.\n\nLagna: **${r.chart.lagan}**`;
+    const msg = `Dhanyavaad ${v.data.name} ji 🙏 Aapki jaankari yeh rahi:\n\n${r.summary}\n\nKya ye sahi hai?`;
     addBot(msg);
     pushHistory('bot', msg);
-
     renderNumCard(r.numerology);
-    renderChartCard({name: v.data.name, lagan: r.chart.lagan, d1: r.chart.d1});
-    botSay('आपकी जन्म-कुंडली तैयार है। अब आप अपना सवाल पूछिए। आप किस विषय के बारे में जानना चाहते हैं?');
+    renderChartCard(v.data);
+    setChips(['✓ Haan, sahi hai','✎ Kuch badalna hai'], label => {
+      clearChips();
+      if(label.startsWith('✓')){
+        addUser('Haan, sahi hai'); pushHistory('user','Haan, sahi hai');
+        botSay('Bahut achha. Ab neeche se koi vishay chunein, ya seedha apna sawal likhein 🙏');
+        renderFeatures();
+        scrollDown();
+      } else {
+        addUser('Kuch badalna hai'); pushHistory('user','Kuch badalna hai');
+        renderIntake(state.intake);
+      }
+    });
     renderFeatures();
-    scrollDown();
   }catch(e){
     err.textContent = e.message; err.hidden = false;
-    btn.disabled = false; btn.textContent = 'Kundli Calculate Karein';
+    btn.disabled = false; btn.textContent = 'Kundli bhejein';
   }
 }
 
@@ -1333,9 +1332,7 @@ async function sendChat(query, display){
 async function askBackend(query, {followups=true} = {}){
   showThinking();
   try{
-    const history = state.history.slice(-12).map(item => ({role:item.role, text:item.text}));
-    if(history.length && history[history.length - 1].role === 'user') history[history.length - 1].text = query;
-    const r = await api({action:'chat', query, history});
+    const r = await api({action:'chat', query});
     hideThinking();
     state.remaining = r.remaining; renderLimit();
     addBot(r.text, {id: r.messageId});
@@ -1380,8 +1377,8 @@ function boot(){
   } else {
     botSay(GREETING);
   }
-  if(!state.intakeDone && state.intakeRequested) renderIntake(state.intake || {});
-  else if(state.intakeDone) scrollDown();
+  if(!state.intakeDone) renderIntake(state.intake || {});
+  else scrollDown();
 }
 
 /* ---------- INPUT ---------- */
@@ -1390,16 +1387,6 @@ function handleSubmit(){
   const text = input.value.trim();
   if(!text) return;
   input.value = ''; autosize();
-  if(!state.intakeDone){
-    addUser(text); pushHistory('user', text);
-    state.intakeRequested = true; save();
-    const isHey = /^(hey|hi|hello|namaste|नमस्ते)[!.\s]*$/i.test(text);
-    botSay(isHey
-      ? 'नमस्ते! आपका Turiya AI में स्वागत है। कृपया अपनी जन्म-विवरण भरिए।'
-      : 'नमस्ते! आपकी व्यक्तिगत कुंडली के आधार पर मार्गदर्शन देने से पहले कृपया अपनी जन्म-विवरण भरिए।');
-    renderIntake(state.intake || {});
-    return;
-  }
   sendChat(text);
 }
 $('sendBtn').onclick = handleSubmit;
@@ -1413,7 +1400,7 @@ $('newChatBtn').onclick = async () => {
   try{
     await api({action:'delete'});
   }catch(e){
-    alert(e && e.message ? e.message : 'Abhi data hatane mein dikkat hui. Kripya thodi der baad koshish karein.');
+    alert('Abhi data hatane mein dikkat hui. Kripya thodi der baad koshish karein.');
     return;
   }
   localStorage.removeItem(K_STATE);
