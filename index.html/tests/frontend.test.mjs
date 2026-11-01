@@ -15,7 +15,7 @@ test('frontend starts by asking only for the customer name', () => {
 });
 
 test('frontend asks for a Lagan Chart Prompt after name and saves it separately', () => {
-  assert.match(html, /const CHART_PROMPT_MESSAGE = 'अब कृपया अपना पूरा Lagan Chart Prompt यहाँ paste कर दीजिए।/);
+  assert.match(html, /const CHART_PROMPT_MESSAGE = 'अब अपना Lagan Chart Prompt यहाँ share कीजिए।/);
   assert.match(html, /action:'save_chart_prompt', chartPrompt:prompt/);
   assert.match(html, /Mere paas Lagan Chart Prompt nahi hai/);
 });
@@ -23,7 +23,7 @@ test('frontend asks for a Lagan Chart Prompt after name and saves it separately'
 test('missing chart guidance links to the main Swami Atma Jagran website', () => {
   assert.match(html, /const WEBSITE_URL = 'https:\/\/swamiatmajagran\.in\/'/);
   assert.match(html, /Swarnima Janm Patrika विकल्प चुनें/);
-  assert.match(html, /WhatsApp पर भेज दिए जाएंगे/);
+  assert.match(html, /लगभग 1–3 दिन का समय लग सकता है/);
   assert.match(html, /अपना Lagan Chart Prompt बनवाएं/);
   assert.match(html, /ChatGPT, Gemini, Claude aur Grok/);
 });
