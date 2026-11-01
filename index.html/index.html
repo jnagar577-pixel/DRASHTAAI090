@@ -910,7 +910,7 @@ state.hasKundli = state.hasKundli === true;
 function save(){ try{ localStorage.setItem(K_STATE, JSON.stringify(state)); }catch(e){} }
 function pushHistory(role, text, id){ state.history.push({role, text, id: id ?? null}); save(); }
 function firstName(){ return state.name.trim().split(/\s+/)[0] || ''; }
-function nameGreeting(){ return `नमस्ते ${firstName()} जी 🙏 अब कृपया अपना पूरा Lagan Chart Prompt यहाँ paste कर दीजिए।`; }
+function nameGreeting(){ return `नमस्ते ${firstName()} जी 🙏 ${CHART_PROMPT_MESSAGE}`; }
 function setComposerMode(){
   if(!state.name) input.placeholder = 'Sabse pehle apna naam likhiye...';
   else if(!state.hasKundli) input.placeholder = 'Apna poora Lagan Chart Prompt yahan paste karein...';
@@ -1238,10 +1238,13 @@ async function boot(){
     if(!visibleHistory.length) botSay(GREETING);
   }else if(!visibleHistory.length){
     botSay(nameGreeting());
-    setChips(['Mere paas Lagan Chart Prompt nahi hai'], () => { clearChips(); showWebsiteGuidance(); }, true);
   }else if(!visibleHistory.some(m => m.role === 'bot' && /Lagan Chart Prompt/i.test(m.text))){
     botSay(nameGreeting());
   }
+  if(!state.hasKundli && state.name && !visibleHistory.some(m => m.role === 'bot' && /100% Free Chart/i.test(m.text))){
+    setChips(['Mere paas Lagan Chart Prompt nahi hai'], () => { clearChips(); showWebsiteGuidance(); }, true);
+  }
+  updateHero();
   scrollDown();
 }
 
