@@ -254,6 +254,8 @@ main{max-width:920px;padding-top:22px}
 .foot{color:#8190a8}
 .foot a{color:#c7ad73;text-decoration-color:rgba(199,173,115,.4);text-underline-offset:3px}
 .foot a:hover{color:#ffe4a0}
+.website-cta{display:inline-flex;align-items:center;gap:8px;margin-top:8px;padding:11px 17px;border-radius:999px;background:linear-gradient(135deg,#ffedbd,#e2bd70 58%,#c99b4c);color:#101a2b!important;font-weight:700;text-decoration:none!important;box-shadow:0 5px 18px rgba(216,182,109,.16)}
+.website-cta:hover{filter:brightness(1.06);transform:translateY(-1px)}
 
 /* Quiet planetary motion: visible in the atmosphere, never competing with text. */
 .cosmos{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;isolation:isolate;opacity:.78}
@@ -907,7 +909,7 @@ state.name = typeof state.name === 'string' ? state.name : '';
 state.hasKundli = state.hasKundli === true;
 function save(){ try{ localStorage.setItem(K_STATE, JSON.stringify(state)); }catch(e){} }
 function pushHistory(role, text, id){ state.history.push({role, text, id: id ?? null}); save(); }
-function firstName(){ return state.name.trim().split(/\\s+/)[0] || ''; }
+function firstName(){ return state.name.trim().split(/\s+/)[0] || ''; }
 function nameGreeting(){ return `नमस्ते ${firstName()} जी 🙏 अब कृपया अपना पूरा Lagan Chart Prompt यहाँ paste कर दीजिए।`; }
 function setComposerMode(){
   if(!state.name) input.placeholder = 'Sabse pehle apna naam likhiye...';
