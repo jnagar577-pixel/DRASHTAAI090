@@ -106,37 +106,6 @@ main{max-width:880px;margin:0 auto;padding:18px 18px 190px}
 .num-t{font-size:12px;color:var(--muted);line-height:1.5}
 .num-meta{font-size:11px;color:var(--faint);margin-top:8px}
 
-/* D1 CHART CARD */
-.chart-wrap{width:min(420px,88%);margin:-6px 0 14px 42px;padding:14px;border-radius:18px;background:linear-gradient(160deg,var(--glass2),var(--glass));border:1px solid var(--line);animation:fadeUp .5s ease both}
-@media(max-width:520px){.chart-wrap{margin-left:0;width:100%}}
-.chart-head{font-family:'Fraunces',Georgia,serif;font-size:15px;color:var(--gold-hi);margin-bottom:8px}
-.chart-svg svg{display:block;width:100%;height:auto}
-.chart-note{font-size:12px;color:var(--faint);margin:8px 0 10px;text-align:center}
-.chart-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-.chart-actions button{background:var(--glass);border:1px solid var(--line);color:var(--cream);border-radius:999px;padding:7px 12px;font:inherit;font-size:12px;cursor:pointer;transition:background .2s,transform .2s}
-.chart-actions button:hover{background:var(--glass2);transform:translateY(-1px)}
-.chart-overlay{position:fixed;inset:0;z-index:50;background:rgba(8,6,4,.88);display:flex;align-items:center;justify-content:center;padding:16px;cursor:pointer;animation:fadeUp .3s ease both}
-.chart-full{background:var(--ink);border:1px solid var(--line);border-radius:20px;padding:16px;max-width:95vw}
-.chart-full svg{display:block;width:min(88vmin,560px);height:auto}
-
-/* INTAKE FORM */
-.intake{width:min(640px,94%)}
-.intake .hint{font-size:13px;color:var(--muted);margin:4px 0 12px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-@media(max-width:520px){.grid2{grid-template-columns:1fr}}
-.field{display:grid;gap:5px;font-size:12px;color:var(--muted)}
-.field.full{grid-column:1/-1;margin-top:10px}
-.intake input,.intake select,.intake textarea{background:rgba(255,244,222,.06);border:1px solid var(--line);color:var(--cream);
-  border-radius:12px;padding:10px 12px;font:inherit;font-size:14px;color-scheme:dark;outline:none;width:100%;min-width:0}
-.intake input:focus,.intake select:focus,.intake textarea:focus{border-color:rgba(226,185,100,.7);box-shadow:0 0 0 3px rgba(226,185,100,.12)}
-.intake textarea{resize:vertical;min-height:80px}
-.consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin:14px 0 10px;line-height:1.5}
-.consent input{width:18px;height:18px;margin:2px 0 0;flex:0 0 18px;accent-color:var(--gold)}
-.err{color:var(--danger);font-size:13px;margin:6px 0}
-.btn-primary{background:linear-gradient(135deg,#f6dd9a,#d7a24e);color:#2a1608;border:none;border-radius:999px;padding:11px 22px;font:inherit;font-weight:600;font-size:14px;cursor:pointer;transition:transform .2s,opacity .2s}
-.btn-primary:hover{transform:translateY(-1px)}
-.btn-primary:disabled{opacity:.6;cursor:wait;transform:none}
-
 /* CHIPS */
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px;animation:fadeUp .5s ease both}
 .chip{background:var(--glass);border:1px solid var(--line);color:var(--cream);padding:9px 14px;border-radius:999px;font:inherit;font-size:13px;cursor:pointer;transition:all .2s}
@@ -259,24 +228,12 @@ main{max-width:920px;padding-top:22px}
 .thinking{color:#c0cbe0}
 .orb{background:radial-gradient(circle,#fff1c9 0%,#e2bd70 38%,rgba(216,182,109,0) 73%);box-shadow:0 0 24px rgba(216,182,109,.36),0 0 45px rgba(65,126,205,.13)}
 .shimmer{background:linear-gradient(90deg,#9dadc6 25%,#ffe5a0 50%,#9dadc6 75%);background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent}
-.num-box,.chart-wrap{background:linear-gradient(145deg,rgba(20,38,66,.88),rgba(7,17,34,.9));border-color:rgba(216,182,109,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.num-box{background:linear-gradient(145deg,rgba(20,38,66,.88),rgba(7,17,34,.9));border-color:rgba(216,182,109,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
 .num-label{color:#d8b66d}
 .num-n{color:#ffe4a0}
 .num-p{color:#e9e2d5}
 .num-t{color:#b2bfd3}
-.num-meta,.chart-note{color:#8798b2}
-.chart-head{color:#f1d28a}
-.chart-actions button{background:rgba(119,153,201,.08);border-color:rgba(216,182,109,.22);color:#e9e3d7}
-.chart-actions button:hover{background:rgba(119,153,201,.15);border-color:rgba(216,182,109,.48)}
-.chart-overlay{background:rgba(2,6,14,.91);backdrop-filter:blur(12px)}
-.chart-full{background:#071225;border-color:rgba(216,182,109,.36);box-shadow:0 25px 90px rgba(0,0,0,.55)}
-.intake input,.intake select,.intake textarea{background:rgba(5,13,28,.82);border-color:rgba(161,184,222,.2);color:#f5f0e6}
-.intake input:focus,.intake select:focus,.intake textarea:focus{border-color:rgba(226,194,119,.72);box-shadow:0 0 0 3px rgba(216,182,109,.1)}
-.field{color:#b5c2d7}
-.consent{color:#aab8ce}
-.err{color:#f0b6a8}
-.btn-primary{background:linear-gradient(135deg,#ffedbd,#e2bd70 58%,#c99b4c);color:#111a2b;box-shadow:0 7px 22px rgba(204,160,73,.13)}
-.btn-primary:hover{box-shadow:0 10px 28px rgba(204,160,73,.2)}
+.num-meta{color:#8798b2}
 .chip{background:rgba(13,27,49,.78);border-color:rgba(216,182,109,.23);color:#e9e3d7}
 .chip:hover{background:rgba(27,46,76,.9);border-color:rgba(255,224,155,.5)}
 .chip.ghost{color:#aab8ce;border-color:rgba(161,184,222,.22)}
@@ -394,7 +351,7 @@ header{
   animation:brandAura 5.8s ease-in-out infinite;
 }
 @keyframes brandAura{0%,100%{box-shadow:0 0 0 4px rgba(217,185,112,.035),0 0 17px rgba(217,185,112,.12)}50%{box-shadow:0 0 0 4px rgba(217,185,112,.075),0 0 26px rgba(217,185,112,.22)}}
-h1,.hero h2,.f-label,.chart-head,.num-n{font-family:'Cormorant Garamond',Georgia,serif}
+h1,.hero h2,.f-label,.num-n{font-family:'Cormorant Garamond',Georgia,serif}
 h1{font-weight:600;font-size:25px;letter-spacing:.015em;color:#fff8e9;text-shadow:0 0 22px rgba(217,185,112,.09)}
 .sub{font-size:11px;letter-spacing:.06em;color:#9eafc9}
 .ghost-btn{background:rgba(12,27,51,.74);border-color:rgba(217,185,112,.25);letter-spacing:.01em}
@@ -464,22 +421,9 @@ main{max-width:980px;padding-top:25px}
 .orb::after{content:"";position:absolute;inset:-7px;border:1px solid rgba(217,185,112,.22);border-radius:50%;animation:thinkingOrbit 3.2s linear infinite}
 @keyframes thinkingOrbit{to{transform:rotate(360deg)}}
 .num-wrap{gap:12px}
-.num-box,.chart-wrap{border-radius:17px;background:linear-gradient(145deg,rgba(15,32,57,.94),rgba(6,16,33,.95));border-color:rgba(217,185,112,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 12px 30px rgba(0,0,0,.08)}
+.num-box{border-radius:17px;background:linear-gradient(145deg,rgba(15,32,57,.94),rgba(6,16,33,.95));border-color:rgba(217,185,112,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 12px 30px rgba(0,0,0,.08)}
 .num-label{font-size:10px;font-weight:700;letter-spacing:.17em}
 .num-n{font-size:38px}
-.chart-head{font-size:20px}
-.chart-svg svg{filter:drop-shadow(0 3px 12px rgba(217,185,112,.04))}
-.intake{width:min(660px,94%)}
-.intake .bubble p:first-child b{font-family:'Cormorant Garamond',Georgia,serif;font-size:23px;letter-spacing:.005em;color:#f5dfab}
-.intake .hint{line-height:1.7;color:#9eafc9}
-.grid2{gap:12px}
-.field{font-size:11px;font-weight:600;letter-spacing:.025em;color:#aebdd2}
-.intake input,.intake select,.intake textarea{border-radius:11px;background:rgba(4,12,27,.78);border-color:rgba(142,170,215,.19);padding:12px 13px;min-height:43px;transition:border-color .22s,box-shadow .22s,background .22s}
-.intake input:hover,.intake select:hover,.intake textarea:hover{border-color:rgba(217,185,112,.3)}
-.intake input:focus,.intake select:focus,.intake textarea:focus{background:rgba(6,16,33,.98);border-color:rgba(238,206,131,.72);box-shadow:0 0 0 3px rgba(217,185,112,.08),0 0 18px rgba(45,91,149,.09)}
-.consent{font-size:12px;line-height:1.65}
-.btn-primary{background:linear-gradient(130deg,#fff0c9,#e1c17b 58%,#bd9148);border-radius:11px;padding:12px 22px;box-shadow:0 7px 22px rgba(204,160,73,.12);letter-spacing:.01em}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(204,160,73,.18)}
 .chips{gap:9px;margin-top:12px}
 .chip{padding:9px 13px;background:rgba(9,22,43,.82);border-color:rgba(217,185,112,.2);font-size:12px;transition:transform .22s,border-color .22s,background .22s}
 .chip:hover{transform:translateY(-2px);border-color:rgba(255,224,155,.45);background:rgba(24,43,72,.9)}
@@ -492,8 +436,6 @@ main{max-width:980px;padding-top:25px}
 .round.send{background:linear-gradient(135deg,#fff0c9,#e1c17b 58%,#bd9148);box-shadow:0 4px 15px rgba(216,182,109,.14)}
 .foot{font-size:10px;color:#7788a3;max-width:770px;margin:10px auto 0}
 .foot a{color:#cdb77e}
-.chart-overlay{background:rgba(2,6,15,.93)}
-.chart-full{background:#071225;border-color:rgba(217,185,112,.32)}
 
 /* Separate paths, distinct starting angles and speeds. */
 .orbit-left{animation:orbitSpinLeft 58s linear infinite!important}
@@ -529,7 +471,6 @@ main{max-width:980px;padding-top:25px}
   .f-label{font-size:18px}
   .f-sub{font-size:10px}
   .bubble{max-width:calc(100% - 46px);font-size:13px;padding:13px 14px}
-  .intake{width:100%}
 }
 @media(max-width:440px){
   .hero{grid-template-columns:1fr;padding-top:22px}
@@ -554,7 +495,7 @@ main{max-width:980px;padding-top:25px}
 
 /* ================================================================
    DRASHTA AI / MOONLIT LOTUS VOYAGE — VISUAL-ONLY REFINEMENT
-   Application logic, API calls, intake validation, state and chat flow untouched.
+   Application flow and API behavior are controlled by the script below.
    ================================================================ */
 :root{
   --ink:#030914; --gold:#d9b66d; --gold-hi:#fff0c4; --cream:#f5f0e7;
@@ -613,16 +554,8 @@ main{max-width:920px;padding-top:22px}
 .msg-actions button{color:#b2bdce}.msg-actions button:hover{color:#ffe7ad}
 .orb{background:radial-gradient(circle,#fff5d7 0%,#dcb66b 34%,rgba(194,39,53,.24) 56%,transparent 72%);box-shadow:0 0 24px rgba(217,182,109,.35),0 0 36px rgba(172,30,47,.15)}
 .shimmer{background:linear-gradient(90deg,#b6c4d7 25%,#ffe7ad 48%,#c63c4b 55%,#b6c4d7 75%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text}
-.num-box,.chart-wrap{background:linear-gradient(145deg,rgba(7,22,40,.88),rgba(5,13,27,.76));border-color:rgba(217,182,109,.24);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.12)}
-.num-label{color:#d9b66d}.num-n,.chart-head{font-family:'Cormorant Garamond',Georgia,serif;color:#f4d99a}
-.intake{width:min(660px,96%)}
-.intake .bubble.bot{padding:18px 19px}
-.intake input,.intake select,.intake textarea{background:rgba(3,12,25,.74);border-color:rgba(217,182,109,.26);color:#f7f0e4;border-radius:11px;transition:border-color .22s,box-shadow .22s,background .22s}
-.intake input:focus,.intake select:focus,.intake textarea:focus{background:rgba(4,15,30,.94);border-color:#dfbd75;box-shadow:0 0 0 3px rgba(217,182,109,.11),0 0 22px rgba(217,182,109,.06)}
-.intake input::placeholder,.intake textarea::placeholder{color:#8798b0}
-.consent{color:#c0cad8}
-.btn-primary{background:linear-gradient(120deg,#f7e5b5,#d4ad61 70%,#ba8b43);color:#101522;box-shadow:0 6px 24px rgba(183,139,66,.16);transition:transform .24s,box-shadow .24s,filter .24s}
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(183,139,66,.24);filter:brightness(1.04)}
+.num-box{background:linear-gradient(145deg,rgba(7,22,40,.88),rgba(5,13,27,.76));border-color:rgba(217,182,109,.24);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.12)}
+.num-label{color:#d9b66d}.num-n{font-family:'Cormorant Garamond',Georgia,serif;color:#f4d99a}
 .chip{background:rgba(5,17,33,.78);border-color:rgba(217,182,109,.24);color:#f2eadc;backdrop-filter:blur(8px)}
 .chip:hover{background:rgba(14,32,54,.9);border-color:rgba(232,199,129,.58)}
 .composer-wrap{background:linear-gradient(180deg,transparent,rgba(2,8,18,.68) 20%,rgba(2,8,18,.96) 78%);padding-top:22px}
@@ -755,14 +688,8 @@ h1{font-family:'Cormorant Garamond',Georgia,serif!important;font-size:clamp(22px
 @keyframes messageArrive{from{opacity:0;transform:translateY(10px) scale(.992);filter:blur(2px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 .bubble.bot{box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 12px 30px rgba(0,0,0,.12)!important;border-color:rgba(217,182,109,.23)!important}
 .bubble.user{box-shadow:0 8px 25px rgba(0,0,0,.18),0 0 18px rgba(217,182,109,.06)!important}
-.intake .bubble.bot{border-radius:18px!important}
-.field{gap:7px;letter-spacing:.015em}
-.intake input,.intake select,.intake textarea{min-height:43px;box-shadow:inset 0 1px 0 rgba(255,255,255,.018)}
-.btn-primary{letter-spacing:.01em;position:relative;overflow:hidden}
-.btn-primary::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 15%,rgba(255,255,255,.3) 48%,transparent 75%);transform:translateX(-120%)}
-.btn-primary:hover::after{transform:translateX(120%);transition:transform .75s ease}
-.chip,.ghost-btn,.round,.chart-actions button{transition:transform .22s ease,border-color .22s ease,background .22s ease,box-shadow .22s ease!important}
-.chip:focus-visible,.ghost-btn:focus-visible,.round:focus-visible,.chart-actions button:focus-visible,.btn-primary:focus-visible{outline:2px solid #f2d28a;outline-offset:3px}
+.chip,.ghost-btn,.round{transition:transform .22s ease,border-color .22s ease,background .22s ease,box-shadow .22s ease!important}
+.chip:focus-visible,.ghost-btn:focus-visible,.round:focus-visible{outline:2px solid #f2d28a;outline-offset:3px}
 .composer{box-shadow:0 16px 44px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.025)!important}
 .composer:focus-within{box-shadow:0 0 0 3px rgba(217,182,109,.1),0 16px 44px rgba(0,0,0,.32),0 0 32px rgba(217,182,109,.1)!important}
 /* Ocean remains the full-screen canvas; slow layered drift adds depth without changing chat layout. */
@@ -938,8 +865,8 @@ const API_ENDPOINT = '/api/ask';
 const K_STATE = 'drashta_state';
 const K_TOKEN = 'drashta_token';
 const DAILY_LIMIT = 100;
-const RASHIS = ['मेष','वृषभ','मिथुन','कर्क','सिंह','कन्या','तुला','वृश्चिक','धनु','मकर','कुंभ','मीन'];
-const GREETING = 'Namaste 🙏 Main <b>Turiya AI</b> hoon — Swami Atma Jagran ka sathi.<br><br>Aapka yahan swagat hai. Yeh jagah aapki apni hai — yahan koi nirnay nahi hoga, sirf samajh milegi. Apne dil ki baat rakkhiye, main poori tarah sunta hoon.<br><br>Neeche apni kundli ki jaankari bhariye, ya seedha apna sawal likhiye.';
+const GREETING = 'नमस्ते 🙏 मैं Turiya AI हूँ। आप अपनी बात सहजता से कहिए। मैं ध्यान से सुनकर सरल और शांत भाषा में आपका मार्गदर्शन करने का प्रयास करूँगा।';
+const SAVED_KUNDLI_MESSAGE = 'आपकी कुंडली हमारे पास सुरक्षित है। अब आप अपना सवाल पूछिए।';
 
 const FEATURES = [
   {icon:'🪔', label:'Kundli Saar', sub:'Ek nazar mein poora saar',
@@ -955,10 +882,10 @@ const FEATURES = [
   {icon:'🕉️', label:'Saral Upay', sub:'Roz ki chhoti aadatein',
    prompt:'Meri kundli ke hisaab se koi saral, sahaj aur bina kharche wale upay batayiye, jaise roz ki chhoti aadatein ya soch. Koi mehenga upay mat sujhayiye.'},
   {icon:'🌅', label:'Aaj ka Margdarshan', sub:'Aaj ke din ke liye',
-   prompt:'Aaj ke din ke liye ek gentle margdarshan dijiye, meri kundli ke adhar par, 3-4 line mein.'},
+   prompt:'Aaj apne din ko shant aur sachet tareeke se jeene ke liye ek chhota adhyatmik margdarshan dijiye. Koi grah-gochar ya bhavishyavani nahi.'},
   {icon:'✨', label:'Apna sawal likhein', sub:'Kuch bhi poochhiye', prompt:null}
 ];
-const FOLLOWUPS = ['Aur vistar se samjhayein','Iske chhote upay batayein','Mere swabhav ke baare mein batayein','Yeh samay kab tak rahega?'];
+const FOLLOWUPS = ['Aur vistar se samjhayein','Iske chhote upay batayein','Mere swabhav ke baare mein batayein','Is baat ko apne jeevan mein kaise lagu karun?'];
 
 const $ = id => document.getElementById(id);
 const chatBox = $('chatBox'), input = $('userInput'), chips = $('quickChips'), features = $('features'), hero = $('hero');
@@ -970,7 +897,7 @@ function loadState(){
     const s = JSON.parse(localStorage.getItem(K_STATE) || 'null');
     if(s && Array.isArray(s.history)) return s;
   }catch(e){}
-  return {history:[], intakeDone:false, intake:null, remaining:DAILY_LIMIT};
+  return {history:[], remaining:DAILY_LIMIT};
 }
 const state = loadState();
 function save(){ try{ localStorage.setItem(K_STATE, JSON.stringify(state)); }catch(e){} }
@@ -1088,7 +1015,7 @@ function addUser(text){
   scrollDown();
 }
 function showThinking(){
-  const lines = ['Aapki kundli ko dhyan se dekha ja raha hai…','Grahon ki chaal samjhi ja rahi hai…','Shabd chune ja rahe hain, zara ruk jayiye…'];
+  const lines = ['Aapki baat ko dhyan se samjha ja raha hai…','Aapke liye sahi shabd chune ja rahe hain…','Ek pal, jawab taiyar ho raha hai…'];
   const r = document.createElement('div');
   r.className = 'thinking'; r.id = 'thinking';
   r.innerHTML = `<div class="orb"></div><span class="shimmer">${lines[Math.floor(Math.random()*lines.length)]}</span>`;
@@ -1112,7 +1039,6 @@ function clearChips(){ chips.hidden = true; chips.innerHTML = ''; }
 
 function renderFeatures(){
   features.innerHTML = '';
-  if(!state.intakeDone){ features.hidden = true; return; }
   features.hidden = false;
   FEATURES.forEach((f, i) => {
     const b = document.createElement('button');
@@ -1143,178 +1069,6 @@ function renderNumCard(n){
   row.innerHTML = box('मूलांक', n.mulank) + box('भाग्यांक', n.bhagyank);
   chatBox.appendChild(row);
   scrollDown();
-}
-
-/* ---------- D1 CHART CARD (lagna + bhav; grah abhi nahi) ---------- */
-// Positions 400x400 box mein, North-Indian diamond ke 12 bhav (bhav 1 se 12)
-const CHART_HOUSE_POS = [[203,99],[105,69],[72,103],[105,197],[74,301],[105,325],[203,294],[300,328],[330,294],[305,197],[335,99],[305,69]];
-function chartSVG(lagan, size, forDownload){
-  const li = RASHIS.indexOf(lagan);
-  if(li < 0) return '';
-  const gold = '#d8b66d', goldHi = '#ffe8ae', muted = '#aebbd0', bg = '#08142a';
-  let t = '';
-  for(let n = 0; n < 12; n++){
-    const [x, y] = CHART_HOUSE_POS[n];
-    const sign = RASHIS[(li + n) % 12];
-    if(n === 0) t += `<text x="${x}" y="${y - 18}" text-anchor="middle" font-size="11" fill="${gold}">लग्न</text>`;
-    t += `<text x="${x}" y="${y}" text-anchor="middle" font-size="14" fill="${goldHi}" font-family="Work Sans,Arial,sans-serif">${sign}</text>`;
-    t += `<text x="${x}" y="${y + 16}" text-anchor="middle" font-size="10" fill="${muted}">${n + 1}</text>`;
-  }
-  const bgRect = forDownload ? `<rect width="400" height="400" fill="${bg}"/>` : '';
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="${size}" height="${size}">`
-    + bgRect
-    + `<g fill="none" stroke="${gold}" stroke-width="1.6">`
-    + `<rect x="0" y="0" width="400" height="400"/>`
-    + `<line x1="0" y1="0" x2="400" y2="400"/><line x1="400" y1="0" x2="0" y2="400"/>`
-    + `<polygon points="200,0 400,200 200,400 0,200"/>`
-    + `</g>` + t + `</svg>`;
-  return svg;
-}
-function saveBlob(blob, fname){
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = fname;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-}
-function chartFileName(name, ext){
-  const safe = String(name || 'kundli').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'kundli';
-  return `kundli-D1-${safe}.${ext}`;
-}
-function downloadChartSVG(lagan, name){
-  const svg = chartSVG(lagan, 800, true);
-  saveBlob(new Blob([svg], {type:'image/svg+xml'}), chartFileName(name, 'svg'));
-}
-function downloadChartPNG(lagan, name){
-  const svg = chartSVG(lagan, 800, true);
-  const url = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml'}));
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement('canvas');
-    c.width = 800; c.height = 800;
-    c.getContext('2d').drawImage(img, 0, 0, 800, 800);
-    c.toBlob(b => saveBlob(b, chartFileName(name, 'png')), 'image/png');
-    URL.revokeObjectURL(url);
-  };
-  img.src = url;
-}
-function openChartFull(lagan){
-  const ov = document.createElement('div');
-  ov.className = 'chart-overlay';
-  ov.innerHTML = `<div class="chart-full">${chartSVG(lagan, 'min(88vmin,560px)', false)}<p class="chart-note">Tap karke band karein</p></div>`;
-  ov.onclick = () => ov.remove();
-  document.body.appendChild(ov);
-}
-function renderChartCard(data){
-  if(!data || !data.lagan) return;
-  const row = document.createElement('div');
-  row.className = 'chart-wrap';
-  row.innerHTML = `
-    <div class="chart-head">लग्न कुंडली (D1) · ${escapeHTML(data.name)}</div>
-    <div class="chart-svg">${chartSVG(data.lagan, '100%', false)}</div>
-    <p class="chart-note">लग्न: ${escapeHTML(data.lagan)} · ग्रह स्थिति जल्द जुड़ेगी</p>
-    <div class="chart-actions">
-      <button type="button" data-act="view">🔍 बड़ा देखें</button>
-      <button type="button" data-act="png">⬇ PNG</button>
-      <button type="button" data-act="svg">⬇ SVG</button>
-    </div>`;
-  row.querySelector('[data-act="view"]').onclick = () => openChartFull(data.lagan);
-  row.querySelector('[data-act="png"]').onclick = () => downloadChartPNG(data.lagan, data.name);
-  row.querySelector('[data-act="svg"]').onclick = () => downloadChartSVG(data.lagan, data.name);
-  chatBox.appendChild(row);
-  scrollDown();
-}
-
-/* ---------- INTAKE FORM ---------- */
-function opts(list, selected=''){
-  return '<option value="">Chunein</option>' + list.map(r => `<option value="${r}"${r===selected?' selected':''}>${r}</option>`).join('');
-}
-function renderIntake(p = {}){
-  if($('intakeRow')) return;
-  const row = document.createElement('div');
-  row.className = 'row'; row.id = 'intakeRow';
-  row.innerHTML = `
-    <div class="avatar">ॐ</div>
-    <div class="bubble bot intake">
-      <p><b>Apni kundli ki jaankari bhariye</b></p>
-      <p class="hint">Jo aap jaante hain wahi bhariye, baaki khaali chhod sakte hain. Sare * wale fields zaroori hain.</p>
-      <div class="grid2">
-        <label class="field">Shubh naam *<input id="f_name" type="text" maxlength="100" autocomplete="name"></label>
-        <label class="field">Janm tithi *<input id="f_dob" type="date"></label>
-        <label class="field">Janm samay<input id="f_time" type="time"></label>
-        <label class="field">Janm sthan<input id="f_place" type="text" maxlength="150" placeholder="Shahar, rajya"></label>
-        <label class="field">Lagan rashi *<select id="f_lagan">${opts(RASHIS, p.lagan_rashi)}</select></label>
-        <label class="field">Chandra rashi<select id="f_moon">${opts(RASHIS, p.moon_rashi)}</select></label>
-        <label class="field full">Lagan Maya Sutra prompt / D1 kundli report (optional)<textarea id="f_notes" rows="7" maxlength="60000" placeholder="Apna Lagan Maya Sutra prompt ya D1 kundli report yahan paste karein"></textarea></label>
-      </div>
-      <label class="consent"><input type="checkbox" id="f_consent"> Main sahmat hoon ki meri di gayi jaankari sirf is margdarshan ke liye use ho. Main ise kabhi bhi "Nayi shuruaat" se hata sakta hoon.</label>
-      <p class="err" id="f_err" hidden></p>
-      <button class="btn-primary" id="f_submit">Kundli bhejein</button>
-    </div>`;
-  chatBox.appendChild(row);
-  $('f_name').value = p.name || '';
-  $('f_dob').value = p.dob || '';
-  $('f_time').value = p.birth_time || '';
-  $('f_place').value = p.birth_place || '';
-  $('f_notes').value = p.notes || '';
-  $('f_submit').onclick = submitIntake;
-  scrollDown();
-}
-
-function readIntake(){
-  const v = {
-    name: $('f_name').value.trim(),
-    dob: $('f_dob').value,
-    birth_time: $('f_time').value,
-    birth_place: $('f_place').value.trim(),
-    lagan: $('f_lagan').value,
-    moon_rashi: $('f_moon').value,
-    notes: $('f_notes').value.trim(),
-  };
-  if(!v.name) return {error:'Kripya apna naam likhiye.'};
-  if(!v.dob) return {error:'Janm tithi chunein.'};
-  if(!v.lagan) return {error:'Lagan rashi chunein. Agar pata na ho to kundli ya report mein dekh kar bhariye.'};
-  if(!$('f_consent').checked) return {error:'Aage badhne ke liye upar sahmati (consent) dena zaroori hai.'};
-  return {data: v};
-}
-
-async function submitIntake(){
-  const err = $('f_err');
-  const btn = $('f_submit');
-  const v = readIntake();
-  if(v.error){ err.textContent = v.error; err.hidden = false; return; }
-  err.hidden = true;
-  btn.disabled = true; btn.textContent = 'Bheja ja raha hai…';
-  try{
-    const r = await api({action:'intake', ...v.data, consent:true});
-    const prev = state.intake;
-    const sameUser = !!prev && prev.name === v.data.name && prev.dob === v.data.dob;
-    if (prev && !sameUser) { state.history = []; chatBox.innerHTML = ''; clearChips(); }
-    state.intakeDone = true;
-    state.intake = v.data;
-    save();
-    $('intakeRow')?.remove();
-    const msg = `Dhanyavaad ${v.data.name} ji 🙏 Aapki jaankari yeh rahi:\n\n${r.summary}\n\nKya ye sahi hai?`;
-    addBot(msg);
-    pushHistory('bot', msg);
-    renderNumCard(r.numerology);
-    setChips(['✓ Haan, sahi hai','✎ Kuch badalna hai'], label => {
-      clearChips();
-      if(label.startsWith('✓')){
-        addUser('Haan, sahi hai'); pushHistory('user','Haan, sahi hai');
-        botSay('Bahut achha. Ab neeche se koi vishay chunein, ya seedha apna sawal likhein 🙏');
-        renderFeatures();
-        scrollDown();
-      } else {
-        addUser('Kuch badalna hai'); pushHistory('user','Kuch badalna hai');
-        renderIntake(state.intake);
-      }
-    });
-    renderFeatures();
-  }catch(e){
-    err.textContent = e.message; err.hidden = false;
-    btn.disabled = false; btn.textContent = 'Kundli bhejein';
-  }
 }
 
 /* ---------- CHAT ---------- */
@@ -1368,23 +1122,33 @@ async function sendFeedback(id, helpful, actEl){
 }
 
 /* ---------- BOOT ---------- */
+function isLegacyIntakeMessage(m){
+  if(m.role !== 'bot') return false;
+  const text = String(m.text || '');
+  return text.includes('Neeche apni kundli ki jaankari bhariye')
+    || text.includes('Aapki jaankari yeh rahi:')
+    || text.includes('Apni kundli ki jaankari bhariye');
+}
 function replay(m){
+  if(isLegacyIntakeMessage(m)) return;
   if(m.role === 'bot') addBot(m.text, {id: m.id});
   else addUser(m.text);
 }
-function boot(){
+async function boot(){
   updateHero(); renderLimit(); renderFeatures();
-  if(state.history.length){
-    state.history.forEach(replay);
-  } else {
-    botSay(GREETING);
+  let hasKundli = false;
+  try{
+    const status = await api({action:'status'});
+    hasKundli = status.hasKundli === true;
+  }catch(e){
+    console.warn('Saved kundli status could not be checked:', e.message);
   }
-  if(!state.intakeDone){
-    renderIntake(state.intake || {});
-  } else {
-    botSay('आपकी कुंडली हमारे पास सुरक्षित है 🙏 अब आप अपना सवाल पूछिए।');
-    scrollDown();
-  }
+
+  const visibleHistory = state.history.filter(m => !isLegacyIntakeMessage(m));
+  if(hasKundli) addBot(SAVED_KUNDLI_MESSAGE);
+  else if(!visibleHistory.length) botSay(GREETING);
+  visibleHistory.forEach(replay);
+  scrollDown();
 }
 
 /* ---------- INPUT ---------- */

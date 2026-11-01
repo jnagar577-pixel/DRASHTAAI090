@@ -387,3 +387,29 @@ test('array of content parts and delta fields are correctly extracted', async ()
   assert.equal(r.code, 200);
   assert.equal(r.body.text, 'Shubha sanket hain');
 });
+
+
+test('status checks saved kundli without creating a conversation', async () => {
+  const r = await call({ token: TOKEN_A, action: 'status' });
+  assert.equal(r.code, 200);
+  assert.deepEqual(r.body, { hasKundli: false });
+  assert.equal(db.conversations.length, 0);
+});
+
+test('status reports an existing saved kundli for the same token', async () => {
+  await intake(TOKEN_A);
+  const r = await call({ token: TOKEN_A, action: 'status' });
+  assert.equal(r.code, 200);
+  assert.deepEqual(r.body, { hasKundli: true });
+});
+
+test('chat without saved kundli does not request an intake form', async () => {
+  const r = await call({ token: TOKEN_A, action: 'chat', query: 'Mera career kaisa rahega?' });
+  assert.equal(r.code, 200);
+  const systemText = groqCalls.at(-1).messages
+    .filter(m => m.role === 'system')
+    .map(m => m.content)
+    .join('\n');
+  assert.match(systemText, /koi saved kundli data uplabdh nahi hai/i);
+  assert.match(systemText, /Birth details ya form bharne ko mat kaho/i);
+});

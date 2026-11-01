@@ -63,3 +63,11 @@ test('getAstrologyKnowledge generates prompt comfortably within token budget', (
     assert.ok(knowledge.includes('PARASHARI') || knowledge.includes('Parashari'));
   }
 });
+
+
+test('consultation framework explicitly limits interpretation to D1 and excludes timing methods', () => {
+  assert.match(CORE_FRAMEWORK, /Interpret only supplied D1 natal data/i);
+  assert.match(CORE_FRAMEWORK, /Do not calculate, interpret or predict from planetary periods or transits/i);
+  assert.doesNotMatch(TOPICS.MARRIAGE, /Exact timing requires/i);
+  assert.doesNotMatch(TOPICS.KARMA, /Sade Sati|Dhaiya/i);
+});

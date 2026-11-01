@@ -1,11 +1,11 @@
-# Drashta AI — Swami Atma Jagran
+# Turiya AI — Swami Atma Jagran
 
 Vedic jyotish margdarshan chatbot. Frontend static hai, backend Vercel serverless function (`api/ask.js`) hai, aur memory Supabase mein store hoti hai.
 
 ## Folder structure
 ```
-index.html            Frontend (chat, intake form, feature buttons)
-api/ask.js            Backend: chat, intake, feedback, delete (Groq + Supabase)
+index.html            Frontend (chat, saved-kundli status, feature buttons)
+api/ask.js            Backend: chat, saved-kundli status, legacy intake, feedback, delete (Groq + Supabase)
 supabase/schema.sql   Database tables aur functions
 tests/ask.test.mjs    Backend tests (mock Supabase + Groq, internet ki zaroorat nahi)
 package.json
@@ -39,20 +39,20 @@ Purane variables `GEMINI_MODEL` aur `GEMINI_API_KEY` ko delete kar dijiye.
 
 ## Kaise kaam karta hai
 - Browser ek random token banata hai aur localStorage mein rakhta hai. Server us token ka SHA-256 hash Supabase mein store karta hai. Raw token server par kabhi save nahi hota.
-- Intake form ka data `conversations` table mein jaata hai. Summary sirf user ke diye fields se banti hai, model se nahi, taaki galat andaaze na lagen.
-- Har chat message ke saath server pichle 10 messages aur kundli data model ko bhejta hai. Isliye bot pichli baatein yaad rakhta hai.
+- Frontend ab birth-details intake form nahi dikhata. Browser token ke liye server read-only status check karta hai; `conversations.chart_summary` maujood ho to saved-kundli confirmation dikhata hai.
+- Purana intake API endpoint backward compatibility ke liye rakha gaya hai; frontend use nahi karta. Isse pehle se saved `chart_summary` records delete ya migrate nahi hote.
+- Har chat message ke saath server pichle 10 messages aur saved kundli context (agar maujood ho) model ko bhejta hai. Isliye bot pichli baatein yaad rakhta hai.
 - Daily limit (100 messages) server par `bump_usage` function se track hoti hai.
 - "Nayi shuruaat" dabane par server se sara data (conversation, messages, feedback) delete ho jaata hai.
 
 ## Testing
 ```bash
-node --test tests/ask.test.mjs
+npm test
 ```
-Ye 13 tests check karte hain: token validation, consent, memory isolation, model fallback, daily limit, feedback ownership, delete, aur error handling.
+Tests mock Supabase aur Groq ke saath API behavior, saved-kundli status, D1-only prompt boundaries, frontend intake/chart removal, aur kundli calculations check karte hain.
 
 ## Privacy
-- Chart ka data personal hai. Intake form mein consent lena zaroori hai.
-- Browser Supabase ko directly call nahi karta. Sab kuch `/api/ask` ke through hota hai.
+- Chart ka data personal hai. Existing legacy intake endpoint consent validation karta hai. Browser Supabase ko directly call nahi karta; sab kuch `/api/ask` ke through hota hai.
 - Supabase tables par RLS on hai, aur anon key se koi access nahi hai.
 - Privacy policy ka legal text alag se banwayiye, ise Digital Personal Data Protection Act 2023 ke hisaab se review karwayiye.
 
@@ -95,9 +95,9 @@ Vercel mein `DEBUG_ERRORS` = `1` set karke redeploy karein. Tab chat mein error 
 Swami ji, website, reports aur consultation ki jaankari ab Supabase ki `knowledge_base` table mein hai. Setup ke liye `supabase/migration_v6_knowledge.sql` SQL Editor mein chalayein. Baad mein Table Editor se `content` edit karke koi bhi jaankari badal sakte hain, redeploy ki zaroorat nahi. Upay sirf tab aate hain jab user khud poochhe.
 
 ## v7 changes
-- Lagan se bhav ki table code se banti hai (`भाव तालिका`). Bot bhav/swami khud nahi nikalta.
-- Naam ya janm tithi badalne par purani baatcheet apne-aap hat jaati hai (naye insaan ke liye).
-- Agar paste kiya hua text form ke lagan se mel na khaye, to bot batata hai aur mix nahi karta.
+- Legacy intake endpoint mein lagan se bhav ki table code se banti hai (`भाव तालिका`); bot bhav/swami khud nahi nikalta.
+- Legacy intake endpoint par naam ya janm tithi badalne se purani baatcheet apne-aap hat jaati hai (naye insaan ke liye).
+- Agar saved D1 report ka lagan recorded lagan se mel na khaye, to bot batata hai aur dono ko mix nahi karta.
 
 ## v8: Ank jyotish (numerology)
-Intake ke baad summary ke saath Mulank (janm din ka ank) aur Bhagyank (puri janm tithi ka ank) ka card dikhta hai. Logic `lib/numerology.js` mein hai. Gemstone (ratna) jaan-bujh kar nahi dikhaya gaya.
+Numerology calculation module `lib/numerology.js` mein legacy compatibility ke liye bana hua hai; current frontend intake ke baad numerology card render nahi karta.
