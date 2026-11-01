@@ -1161,7 +1161,7 @@ async function sendChat(query, display){
     clearChips();
     addUser(query);
     pushHistory('user', query);
-    if(/^(mere paas|mere pass|i (do not|don't) have|nahi hai|nahin hai|chart prompt nahi)/i.test(query.trim())){
+    if(/(?:mere paas|mere pass|mere pas|i (?:do not|don't) have|prompt\s*(?:to\s*)?(?:nahi|nahin|nhi)\s*(?:hai|h)|(?:nahi|nahin|nhi)\s*(?:hai|h)\s*(?:mere paas|mere pass)?|chart prompt nahi)/i.test(query.trim())){
       showWebsiteGuidance();
       return;
     }
@@ -1247,7 +1247,7 @@ async function boot(){
   }else if(!visibleHistory.some(m => m.role === 'bot' && /Lagan Chart Prompt/i.test(m.text))){
     botSay(nameGreeting());
   }
-  if(!state.hasKundli && state.name && !visibleHistory.some(m => m.role === 'bot' && /100% Free Chart/i.test(m.text))){
+  if(!state.hasKundli && state.name && !visibleHistory.some(m => m.role === 'bot' && /Lagan Chart Prompt banwa|Lagan Chart Prompt बनवाएं|Swarnima Janm Patrika/i.test(m.text))){
     setChips(['Mere paas Lagan Chart Prompt nahi hai'], () => { clearChips(); showWebsiteGuidance(); }, true);
   }
   updateHero();
