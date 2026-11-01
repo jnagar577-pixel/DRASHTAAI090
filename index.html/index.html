@@ -939,7 +939,7 @@ const K_STATE = 'drashta_state';
 const K_TOKEN = 'drashta_token';
 const DAILY_LIMIT = 100;
 const RASHIS = ['मेष','वृषभ','मिथुन','कर्क','सिंह','कन्या','तुला','वृश्चिक','धनु','मकर','कुंभ','मीन'];
-const GREETING = 'Namaste! Main <b>Turiya AI</b> hoon, Swami Atma Jagran ka sathi. Aapke consultation mein bahut bahut swagat hai 🙏<br><br>Neeche apni kundli ki jaankari bhariye, ya seedha apna sawal likhiye.';
+const GREETING = 'Namaste 🙏 Main <b>Turiya AI</b> hoon — Swami Atma Jagran ka sathi.<br><br>Aapka yahan swagat hai. Yeh jagah aapki apni hai — yahan koi nirnay nahi hoga, sirf samajh milegi. Apne dil ki baat rakkhiye, main poori tarah sunta hoon.<br><br>Neeche apni kundli ki jaankari bhariye, ya seedha apna sawal likhiye.';
 
 const FEATURES = [
   {icon:'🪔', label:'Kundli Saar', sub:'Ek nazar mein poora saar',
@@ -1298,7 +1298,6 @@ async function submitIntake(){
     addBot(msg);
     pushHistory('bot', msg);
     renderNumCard(r.numerology);
-    renderChartCard(v.data);
     setChips(['✓ Haan, sahi hai','✎ Kuch badalna hai'], label => {
       clearChips();
       if(label.startsWith('✓')){
@@ -1380,8 +1379,12 @@ function boot(){
   } else {
     botSay(GREETING);
   }
-  if(!state.intakeDone) renderIntake(state.intake || {});
-  else scrollDown();
+  if(!state.intakeDone){
+    renderIntake(state.intake || {});
+  } else {
+    botSay('आपकी कुंडली हमारे पास सुरक्षित है 🙏 अब आप अपना सवाल पूछिए।');
+    scrollDown();
+  }
 }
 
 /* ---------- INPUT ---------- */
