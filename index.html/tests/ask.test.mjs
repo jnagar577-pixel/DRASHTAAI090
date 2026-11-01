@@ -133,7 +133,7 @@ const intake = (token, extra = {}) => call({
   birth_time: '06:30', birth_place: 'Bhopal', lagan: 'तुला', moon_rashi: 'मकर', notes: '', ...extra,
 });
 const profile = (token, name = 'Rahul Sharma') => call({ token, action: 'profile', name });
-const savePrompt = (token, chartPrompt = 'Lagan Chart D1 Kundli: Mesh lagna; Sun in Leo; Moon in Taurus; Mars in Aries; planetary positions and bhav details.') => call({ token, action: 'save_chart_prompt', chartPrompt });
+const savePrompt = (token, chartPrompt = 'Lagan Chart D1 Kundli: Mesh lagna; Sun in Leo; Moon in Taurus; Mars in Aries; planetary positions and bhav details with complete verified birth chart information.') => call({ token, action: 'save_chart_prompt', chartPrompt });
 const onboard = async (token, name = 'Rahul Sharma', chartPrompt) => {
   await profile(token, name);
   return savePrompt(token, chartPrompt);
@@ -180,7 +180,7 @@ test('planetary placements stay internal in the system instructions', async () =
     .filter(m => m.role === 'system')
     .map(m => m.content)
     .join('\\n');
-  assert.match(systemText, /customer-facing jawab mein na batao/i);
+  assert.match(systemText, /customer-facing jawab mein bahut kam rakho/i);
 });
 
 test('invalid token is rejected', async () => {
