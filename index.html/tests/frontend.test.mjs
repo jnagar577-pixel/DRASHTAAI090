@@ -10,7 +10,7 @@ test('frontend has no kundli intake form or Lagna chart renderer', () => {
 });
 
 test('frontend starts by asking only for the customer name', () => {
-  assert.match(html, /const GREETING = 'नमस्ते 🙏 मैं Turiya AI हूँ। सबसे पहले कृपया अपना नाम बताइए।';/);
+  assert.match(html, /const GREETING = 'नमस्ते 🙏 मैं Turiya AI हूँ। आप अपनी बात सहजता से कहिए। मैं ध्यान से सुनकर सरल और शांत भाषा में आपका मार्गदर्शन करने का प्रयास करूँगा। कृपया अपना नाम बताइए।';/);
   assert.match(html, /api\(\{action:'profile', name\}\)/);
 });
 
@@ -22,9 +22,9 @@ test('frontend asks for a Lagan Chart Prompt after name and saves it separately'
 
 test('missing chart guidance links to the main Swami Atma Jagran website', () => {
   assert.match(html, /const WEBSITE_URL = 'https:\/\/swamiatmajagran\.in\/'/);
-  assert.match(html, /100% Free Chart विकल्प/);
+  assert.match(html, /Swarnima Janm Patrika विकल्प चुनें/);
   assert.match(html, /WhatsApp पर भेज दिए जाएंगे/);
-  assert.match(html, /Apna Lagan Chart Prompt banwayein/);
+  assert.match(html, /अपना Lagan Chart Prompt बनवाएं/);
   assert.match(html, /ChatGPT, Gemini, Claude aur Grok/);
 });
 
