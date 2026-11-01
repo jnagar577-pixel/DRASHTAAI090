@@ -865,8 +865,11 @@ const API_ENDPOINT = '/api/ask';
 const K_STATE = 'drashta_state';
 const K_TOKEN = 'drashta_token';
 const DAILY_LIMIT = 100;
-const GREETING = 'नमस्ते 🙏 मैं Turiya AI हूँ। आप अपनी बात सहजता से कहिए। मैं ध्यान से सुनकर सरल और शांत भाषा में आपका मार्गदर्शन करने का प्रयास करूँगा।';
+const WEBSITE_URL = 'https://swamiatmajagran.in/';
+const GREETING = 'नमस्ते 🙏 मैं Turiya AI हूँ। सबसे पहले कृपया अपना नाम बताइए।';
 const SAVED_KUNDLI_MESSAGE = 'आपकी कुंडली हमारे पास सुरक्षित है। अब आप अपना सवाल पूछिए।';
+const CHART_PROMPT_MESSAGE = 'अब कृपया अपना पूरा Lagan Chart Prompt यहाँ paste कर दीजिए। मैं उसे आपकी कुंडली के रूप में सुरक्षित कर दूँगा।';
+const NO_PROMPT_MESSAGE = 'कोई बात नहीं। अगर आपके पास अभी अपना Lagan Chart Prompt नहीं है, तो आप पहले हमारी वेबसाइट पर जाकर अपना निःशुल्क चार्ट बनवा सकते हैं। हमारी टीम और Swami Ji के निर्देशों के अनुसार आपके जन्म-विवरण के आधार पर आपका व्यक्तिगत Lagan Chart Prompt तैयार किया जाता है। इसमें लगभग 1–3 दिन लग सकते हैं। आपकी रिपोर्ट और Prompt WhatsApp पर भेज दिए जाएंगे। Prompt मिलने के बाद उसे यहाँ Turiya AI में paste कर दीजिए। फिर आप अपनी कुंडली के आधार पर अपने सवाल पूछ सकेंगे। यह Prompt ChatGPT, Gemini, Claude और Grok जैसे AI tools में भी इस्तेमाल किया जा सकता है।';
 
 const FEATURES = [
   {icon:'🪔', label:'Kundli Saar', sub:'Ek nazar mein poora saar',
@@ -900,8 +903,18 @@ function loadState(){
   return {history:[], remaining:DAILY_LIMIT};
 }
 const state = loadState();
+state.name = typeof state.name === 'string' ? state.name : '';
+state.hasKundli = state.hasKundli === true;
 function save(){ try{ localStorage.setItem(K_STATE, JSON.stringify(state)); }catch(e){} }
 function pushHistory(role, text, id){ state.history.push({role, text, id: id ?? null}); save(); }
+function firstName(){ return state.name.trim().split(/\\s+/)[0] || ''; }
+function nameGreeting(){ return `नमस्ते ${firstName()} जी 🙏 अब कृपया अपना पूरा Lagan Chart Prompt यहाँ paste कर दीजिए।`; }
+function setComposerMode(){
+  if(!state.name) input.placeholder = 'Sabse pehle apna naam likhiye...';
+  else if(!state.hasKundli) input.placeholder = 'Apna poora Lagan Chart Prompt yahan paste karein...';
+  else input.placeholder = 'Apna sawal ya jawab yahan likhiye...';
+  input.setAttribute('aria-label', !state.name ? 'Apna naam likhiye' : !state.hasKundli ? 'Lagan Chart Prompt paste karein' : 'Apna sawal likhiye');
+}
 
 function getToken(){
   let t = localStorage.getItem(K_TOKEN);
@@ -1039,7 +1052,8 @@ function clearChips(){ chips.hidden = true; chips.innerHTML = ''; }
 
 function renderFeatures(){
   features.innerHTML = '';
-  features.hidden = false;
+  features.hidden = !state.hasKundli;
+  if(!state.hasKundli) return;
   FEATURES.forEach((f, i) => {
     const b = document.createElement('button');
     b.className = 'feature';
@@ -1077,7 +1091,75 @@ function runFeature(f){
   sendChat(f.prompt, f.label);
 }
 
+function showWebsiteGuidance(){
+  const html = '<p>' + escapeHTML(NO_PROMPT_MESSAGE) + '</p><p><a class="website-cta" href="' + WEBSITE_URL + '" target="_blank" rel="noopener noreferrer">Apna Lagan Chart Prompt banwayein ↗</a></p>';
+  botSay(html);
+  setChips(['Mere paas Lagan Chart Prompt hai'], label => {
+    clearChips();
+    addBot('Bahut achha 🙏 Ab apna poora Lagan Chart Prompt yahan paste kar dijiye.');
+    pushHistory('bot', 'Bahut achha 🙏 Ab apna poora Lagan Chart Prompt yahan paste kar dijiye.');
+    setComposerMode();
+    input.focus();
+  }, true);
+}
+
+async function submitName(name){
+  const r = await api({action:'profile', name});
+  state.name = r.name;
+  state.hasKundli = false;
+  save(); setComposerMode(); renderFeatures(); updateHero();
+  const message = nameGreeting();
+  botSay(message);
+  setChips(['Mere paas Lagan Chart Prompt nahi hai'], () => { clearChips(); showWebsiteGuidance(); }, true);
+}
+
+async function submitChartPrompt(prompt){
+  showThinking();
+  try{
+    const r = await api({action:'save_chart_prompt', chartPrompt:prompt});
+    hideThinking();
+    state.hasKundli = r.hasKundli === true;
+    if(r.name) state.name = r.name;
+    save(); setComposerMode(); renderFeatures();
+    const message = SAVED_KUNDLI_MESSAGE;
+    addBot(message); pushHistory('bot', message);
+    setChips(['Career & Karma','Vivah & Rishte','Man & Shanti','Apna sawal likhein'], label => {
+      clearChips();
+      if(label === 'Apna sawal likhein'){ input.focus(); return; }
+      const prompts = {
+        'Career & Karma':'Mere career aur karm ke baare mein meri kundli ke aadhar par margdarshan dijiye.',
+        'Vivah & Rishte':'Mere sambandhon aur vivah ke baare mein meri kundli ke aadhar par margdarshan dijiye.',
+        'Man & Shanti':'Mere mann aur bhavnatmak santulan ke baare mein meri kundli ke aadhar par margdarshan dijiye.'
+      };
+      sendChat(prompts[label], label);
+    });
+  }catch(e){
+    hideThinking();
+    addBot(e.message);
+    pushHistory('bot', e.message);
+    if(e.status === 409 || e.status === 400 || e.status === 413) showWebsiteGuidance();
+  }
+}
+
 async function sendChat(query, display){
+  if(!state.name){
+    clearChips();
+    addUser(query); pushHistory('user', query);
+    try{ await submitName(query); }
+    catch(e){ addBot(e.message); pushHistory('bot', e.message); }
+    return;
+  }
+  if(!state.hasKundli){
+    clearChips();
+    addUser(query);
+    pushHistory('user', query);
+    if(/^(mere paas|mere pass|i (do not|don't) have|nahi hai|nahin hai|chart prompt nahi)/i.test(query.trim())){
+      showWebsiteGuidance();
+      return;
+    }
+    await submitChartPrompt(query);
+    return;
+  }
   clearChips();
   const shown = display ?? query;
   addUser(shown); pushHistory('user', shown);
@@ -1135,19 +1217,29 @@ function replay(m){
   else addUser(m.text);
 }
 async function boot(){
-  updateHero(); renderLimit(); renderFeatures();
-  let hasKundli = false;
+  renderLimit();
+  let status = {hasKundli:false, name:''};
   try{
-    const status = await api({action:'status'});
-    hasKundli = status.hasKundli === true;
+    status = await api({action:'status'});
   }catch(e){
-    console.warn('Saved kundli status could not be checked:', e.message);
+    console.warn('Saved chart status could not be checked:', e.message);
   }
+  state.hasKundli = status.hasKundli === true;
+  if(status.name) state.name = status.name;
+  save(); setComposerMode(); renderFeatures(); updateHero();
 
   const visibleHistory = state.history.filter(m => !isLegacyIntakeMessage(m));
-  if(hasKundli) addBot(SAVED_KUNDLI_MESSAGE);
-  else if(!visibleHistory.length) botSay(GREETING);
   visibleHistory.forEach(replay);
+  if(state.hasKundli){
+    addBot(SAVED_KUNDLI_MESSAGE);
+  }else if(!state.name){
+    if(!visibleHistory.length) botSay(GREETING);
+  }else if(!visibleHistory.length){
+    botSay(nameGreeting());
+    setChips(['Mere paas Lagan Chart Prompt nahi hai'], () => { clearChips(); showWebsiteGuidance(); }, true);
+  }else if(!visibleHistory.some(m => m.role === 'bot' && /Lagan Chart Prompt/i.test(m.text))){
+    botSay(nameGreeting());
+  }
   scrollDown();
 }
 
