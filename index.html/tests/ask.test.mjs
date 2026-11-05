@@ -180,7 +180,7 @@ test('planetary placements stay internal in the system instructions', async () =
     .filter(m => m.role === 'system')
     .map(m => m.content)
     .join('\\n');
-  assert.match(systemText, /customer-facing jawab mein bahut kam rakho/i);
+  assert.match(systemText, /customer-facing jawab mein aam taur par bilkul mat batao/i);
 });
 
 test('invalid token is rejected', async () => {

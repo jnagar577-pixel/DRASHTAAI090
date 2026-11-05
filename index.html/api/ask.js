@@ -382,7 +382,7 @@ async function handleSaveChartPrompt(c, hash, b) {
   if (raw.length > LIMITS.notes) {
     throw new HttpError(413, 'Aapka prompt 60,000 characters se bada hai. Kripya complete prompt ko chhote, saaf format mein bhejein.');
   }
-  if (raw.length < 120 || !/(lagna|ascendant|kundli|horoscope|birth chart|d1|planet|grah|rashi|nakshatra|bhav|house|लग्न|कुंडली|ग्रह|राशि|नक्षत्र|भाव|जन्म)/iu.test(raw)) {
+  if (raw.length < 40 || !/(lagan|lagna|ascendant|kundli|horoscope|birth chart|d1|planet|grah|rashi|nakshatra|bhav|house|लग्न|कुंडली|ग्रह|राशि|नक्षत्र|भाव|जन्म)/iu.test(raw)) {
     throw new HttpError(400, 'Yeh complete Lagan Chart Prompt nahi lag raha. Kripya apna poora chart prompt paste karein.');
   }
 
