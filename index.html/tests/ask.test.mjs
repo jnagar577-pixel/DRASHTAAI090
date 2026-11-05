@@ -132,8 +132,56 @@ const intake = (token, extra = {}) => call({
   token, action: 'intake', consent: true, name: 'Jatin Nagar', dob: '2005-07-22',
   birth_time: '06:30', birth_place: 'Bhopal', lagan: 'तुला', moon_rashi: 'मकर', notes: '', ...extra,
 });
+const profile = (token, name = 'Rahul Sharma') => call({ token, action: 'profile', name });
+const savePrompt = (token, chartPrompt = 'Lagan Chart D1 Kundli: Mesh lagna; Sun in Leo; Moon in Taurus; Mars in Aries; planetary positions and bhav details with complete verified birth chart information.') => call({ token, action: 'save_chart_prompt', chartPrompt });
+const onboard = async (token, name = 'Rahul Sharma', chartPrompt) => {
+  await profile(token, name);
+  return savePrompt(token, chartPrompt);
+};
 
 beforeEach(reset);
+
+test('name-first profile is saved and returned by status', async () => {
+  const r = await profile(TOKEN_A, 'Rahul Sharma');
+  assert.equal(r.code, 200);
+  assert.deepEqual(r.body, { name: 'Rahul Sharma' });
+  const status = await call({ token: TOKEN_A, action: 'status' });
+  assert.deepEqual(status.body, { hasKundli: false, name: 'Rahul Sharma' });
+});
+
+test('chart prompt is saved only after name and is used as the customer chart', async () => {
+  const noName = await savePrompt(TOKEN_A);
+  assert.equal(noName.code, 409);
+  await profile(TOKEN_A, 'Rahul Sharma');
+  const prompt = 'Lagan Chart D1 Kundli: Mesh lagna; Sun in Leo; Moon in Taurus; Mars in Aries; planetary positions and bhav details.';
+  const saved = await savePrompt(TOKEN_A, prompt);
+  assert.equal(saved.code, 200);
+  assert.deepEqual(saved.body, { hasKundli: true, name: 'Rahul Sharma' });
+  assert.ok(db.conversations[0].chart_summary.includes(prompt));
+  const chat = await call({ token: TOKEN_A, action: 'chat', query: 'Mera career?' });
+  assert.equal(chat.code, 200);
+  assert.ok(groqCalls[0].messages.some(m => m.content.includes(prompt)));
+});
+
+test('chart prompt storage is isolated by browser token', async () => {
+  await onboard(TOKEN_A, 'Rahul Sharma');
+  await profile(TOKEN_B, 'Aman Verma');
+  const statusA = await call({ token: TOKEN_A, action: 'status' });
+  const statusB = await call({ token: TOKEN_B, action: 'status' });
+  assert.equal(statusA.body.hasKundli, true);
+  assert.equal(statusB.body.hasKundli, false);
+  assert.equal(statusB.body.name, 'Aman Verma');
+});
+
+test('planetary placements stay internal in the system instructions', async () => {
+  await intake(TOKEN_A);
+  await call({ token: TOKEN_A, action: 'chat', query: 'Mere mann ke baare mein bataiye' });
+  const systemText = groqCalls.at(-1).messages
+    .filter(m => m.role === 'system')
+    .map(m => m.content)
+    .join('\\n');
+  assert.match(systemText, /customer-facing jawab mein aam taur par bilkul mat batao/i);
+});
 
 test('invalid token is rejected', async () => {
   const r = await call({ token: 'short', action: 'chat', query: 'hi' });
@@ -184,12 +232,14 @@ test('second chat includes memory of the first exchange', async () => {
 test('memory is isolated per token', async () => {
   await intake(TOKEN_A);
   await call({ token: TOKEN_A, action: 'chat', query: 'Secret A' });
+  await intake(TOKEN_B, { name: 'Rahul Sharma' });
   await call({ token: TOKEN_B, action: 'chat', query: 'Hello B' });
   const sentB = groqCalls[1].messages.map(m => m.content);
   assert.ok(!sentB.includes('Secret A'), 'token B ko token A ki baat nahi dikhni chahiye');
 });
 
 test('model 404 falls back to the next model', async () => {
+  await intake(TOKEN_A);
   groqRule = model => (model === 'openai/gpt-oss-120b' ? 'notfound' : 'ok');
   const r = await call({ token: TOKEN_A, action: 'chat', query: 'Test' });
   assert.equal(r.code, 200);
@@ -197,6 +247,7 @@ test('model 404 falls back to the next model', async () => {
 });
 
 test('daily limit returns 429', async () => {
+  await intake(TOKEN_A);
   bumpOverride = 101;
   const r = await call({ token: TOKEN_A, action: 'chat', query: 'Test' });
   assert.equal(r.code, 429);
@@ -210,6 +261,7 @@ test('feedback works on own message and is blocked for another token', async () 
   assert.equal(ok.code, 200);
   assert.equal(db.feedback.length, 1);
 
+  await intake(TOKEN_B, { name: 'Other' });
   await call({ token: TOKEN_B, action: 'chat', query: 'x' });
   const bad = await call({ token: TOKEN_B, action: 'feedback', messageId: chat.body.messageId, helpful: false });
   assert.equal(bad.code, 404);
@@ -238,6 +290,7 @@ test('missing Supabase config returns 500 without leaking details', async () => 
 });
 
 test('upstream failure gives friendly message, not raw error', async () => {
+  await intake(TOKEN_A);
   groqRule = () => 'notfound';
   const r = await call({ token: TOKEN_A, action: 'chat', query: 'Test' });
   assert.equal(r.code, 502);
@@ -291,6 +344,7 @@ test('brand knowledge from database is sent to the model in its own block', asyn
 });
 
 test('chat still works when knowledge_base fails', async () => {
+  await intake(TOKEN_A);
   db.knowledgeFail = true;
   const r = await call({ token: TOKEN_A, action: 'chat', query: 'Hello' });
   assert.equal(r.code, 200);
@@ -392,7 +446,7 @@ test('array of content parts and delta fields are correctly extracted', async ()
 test('status checks saved kundli without creating a conversation', async () => {
   const r = await call({ token: TOKEN_A, action: 'status' });
   assert.equal(r.code, 200);
-  assert.deepEqual(r.body, { hasKundli: false });
+  assert.deepEqual(r.body, { hasKundli: false, name: '' });
   assert.equal(db.conversations.length, 0);
 });
 
@@ -400,16 +454,11 @@ test('status reports an existing saved kundli for the same token', async () => {
   await intake(TOKEN_A);
   const r = await call({ token: TOKEN_A, action: 'status' });
   assert.equal(r.code, 200);
-  assert.deepEqual(r.body, { hasKundli: true });
+  assert.deepEqual(r.body, { hasKundli: true, name: 'Jatin Nagar' });
 });
 
-test('chat without saved kundli does not request an intake form', async () => {
+test('chat without a saved chart prompt is blocked before Groq', async () => {
   const r = await call({ token: TOKEN_A, action: 'chat', query: 'Mera career kaisa rahega?' });
-  assert.equal(r.code, 200);
-  const systemText = groqCalls.at(-1).messages
-    .filter(m => m.role === 'system')
-    .map(m => m.content)
-    .join('\n');
-  assert.match(systemText, /koi saved kundli data uplabdh nahi hai/i);
-  assert.match(systemText, /Birth details ya form bharne ko mat kaho/i);
+  assert.equal(r.code, 409);
+  assert.equal(groqCalls.length, 0);
 });
