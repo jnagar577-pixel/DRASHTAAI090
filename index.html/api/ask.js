@@ -211,13 +211,18 @@ function houseTable(lagan) {
 
 
 const RASHI_ALIASES = {
-  'मेष': ['मेष', 'aries'], 'वृषभ': ['वृषभ', 'वृष', 'taurus'],
-  'मिथुन': ['मिथुन', 'gemini'], 'कर्क': ['कर्क', 'cancer'],
-  'सिंह': ['सिंह', 'leo'], 'कन्या': ['कन्या', 'virgo'],
-  'तुला': ['तुला', 'libra'], 'वृश्चिक': ['वृश्चिक', 'scorpio'],
-  'धनु': ['धनु', 'sagittarius'], 'मकर': ['मकर', 'capricorn'],
+  'मेष': ['मेष', 'mesh', 'mesha', 'aries'],
+  'वृषभ': ['वृषभ', 'वृष', 'vrishabh', 'vrishabha', 'taurus'],
+  'मिथुन': ['मिथुन', 'mithun', 'gemini'],
+  'कर्क': ['कर्क', 'kark', 'karaka', 'cancer'],
+  'सिंह': ['सिंह', 'singh', 'simha', 'leo'],
+  'कन्या': ['कन्या', 'kanya', 'virgo'],
+  'तुला': ['तुला', 'tula', 'libra'],
+  'वृश्चिक': ['वृश्चिक', 'vrishchik', 'vrischika', 'scorpio'],
+  'धनु': ['धनु', 'dhanu', 'sagittarius'],
+  'मकर': ['मकर', 'makar', 'makara', 'capricorn'],
   'कुंभ': ['कुंभ', 'कुम्भ', 'kumbh', 'kumbha', 'aquarius'],
-  'मीन': ['मीन', 'pisces'],
+  'मीन': ['मीन', 'meen', 'mina', 'pisces'],
 };
 
 function findRashi(value) {
@@ -237,7 +242,7 @@ function findRashi(value) {
 function extractChartLagna(source) {
   const found = new Set();
   const lines = String(source || '').split(/\r?\n/);
-  const label = /(?:lagna(?:\s*rashi)?|ascendant(?:\s*sign)?|rising\s*sign|लग्न(?:\s*राशि)?)\s*(?:[:=：-]|\bis\b)\s*(.+)/i;
+  const label = /(?:lagan(?:a)?(?:\s*rashi)?|ascendant(?:\s*sign)?|rising\s*sign|लग्न(?:\s*राशि)?)\s*(?:[:=：-]|\bis\b)\s*(.+)/i;
   for (const line of lines) {
     const match = line.match(label);
     if (match) {
@@ -245,7 +250,7 @@ function extractChartLagna(source) {
       const rashi = findRashi(value);
       if (rashi) found.add(rashi);
     }
-    const reverse = line.match(/(मेष|वृषभ|मिथुन|कर्क|सिंह|कन्या|तुला|वृश्चिक|धनु|मकर|कुंभ|कुम्भ|मीन|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\\s+(?:lagna|लग्न)\\b/i);
+    const reverse = line.match(/(मेष|वृषभ|मिथुन|कर्क|सिंह|कन्या|तुला|वृश्चिक|धनु|मकर|कुंभ|कुम्भ|मीन|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\\s+(?:lagna|lagan|लग्न)\\b/i);
     if (reverse) { const rashi = findRashi(reverse[1]); if (rashi) found.add(rashi); }
   }
   return found.size === 1 ? { rashi: [...found][0], conflict: false } : {
