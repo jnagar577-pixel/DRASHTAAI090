@@ -240,21 +240,21 @@ function findRashi(value) {
 
 // Sirf explicitly labelled Lagna/Ascendant line ko source maana jaata hai.
 function extractD1Source(source) {
-  const lines = extractD1Source(source).split(/\\r?\\n/);
-  const hasD1Header = lines.some(line => /(?:^|\\b)(?:D1|Rashi Chart|Janma Kundli)(?:\\b|$)/i.test(line));
+  const lines = String(source || '').split(/\r?\n/);
+  const hasD1Header = lines.some(line => /(?:^|\b)(?:D1|Rashi Chart|Janma Kundli)(?:\b|$)/i.test(line));
   let section = hasD1Header ? 'before-d1' : 'default';
   const kept = [];
   for (const line of lines) {
-    if (/\\bD1\\b|Rashi Chart|Janma Kundli/i.test(line)) { section = 'd1'; kept.push(line); continue; }
-    if (/Arudha|Upapada|Navamsa|\\bD9\\b|Dashamsha|\\bD10\\b|अारूढ़|अरूढ़|उपपद/i.test(line)) { section = 'other'; continue; }
+    if (/\bD1\b|Rashi Chart|Janma Kundli/i.test(line)) { section = 'd1'; kept.push(line); continue; }
+    if (/Arudha|Upapada|Navamsa|\bD9\b|Dashamsha|\bD10\b|अारूढ़|अरूढ़|उपपद/i.test(line)) { section = 'other'; continue; }
     if (section === 'd1' || section === 'default') kept.push(line);
   }
-  return kept.join('\\n');
+  return kept.join('\n');
 }
 
 function extractChartLagna(source) {
   const found = new Set();
-  const lines = String(source || '').split(/\r?\n/);
+  const lines = extractD1Source(source).split(/\r?\n/);
   const label = /(?:(?:lagna|lagan)(?:\s*rashi)?|ascendant(?:\s*sign)?|rising\s*sign|लग्न(?:\s*राशि)?)\s*(?:[:=：-]|\bis\b)\s*(.+)/i;
   for (const line of lines) {
     const match = line.match(label);
@@ -326,7 +326,7 @@ function findPlanets(value) {
 }
 
 function parseVerifiedPlanetPlacements(source, lagna) {
-  const text = String(source || '');
+  const text = extractD1Source(source);
   const pattern = /(?:\b(1[0-2]|[1-9])(?:st|nd|rd|th)?\s*(?:house|bhav)\b|भाव\s*(1[0-2]|[1-9]))\s*(?:(?:mein|me)\b|में)?/gi;
   const markers = [...text.matchAll(pattern)], placements = {}, conflicts = [];
   for (let i = 0; i < markers.length; i++) {
