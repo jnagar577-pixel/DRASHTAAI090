@@ -72,20 +72,6 @@ main{max-width:880px;margin:0 auto;padding:18px 18px 190px}
 .f-label{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:600}
 .f-sub{font-size:12px;color:var(--muted);line-height:1.4}
 
-/* PREMIUM 3D CONSULTATION TOPICS */
-.features{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:22px 0 24px;perspective:1100px}
-@media(min-width:720px){.features{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}}
-.feature{position:relative;isolation:isolate;min-height:158px;padding:20px 19px;border-radius:22px;overflow:hidden;background:linear-gradient(145deg,rgba(48,37,31,.98),rgba(20,19,22,.98) 58%,rgba(37,29,25,.98));border:1px solid rgba(220,183,112,.24);box-shadow:0 13px 25px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,244,218,.08),inset 0 -12px 22px rgba(0,0,0,.16);transform:translateY(0) rotateX(0);transform-style:preserve-3d;transition:transform .32s cubic-bezier(.2,.75,.25,1),border-color .3s,box-shadow .3s}
-.feature::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle at 15% 0%,rgba(233,196,127,.16),transparent 42%),linear-gradient(125deg,rgba(255,255,255,.055),transparent 42%);opacity:.9}
-.feature::after{content:"";position:absolute;right:-38px;bottom:-58px;width:160px;height:160px;border-radius:50%;border:1px solid rgba(225,190,128,.10);box-shadow:0 0 0 14px rgba(225,190,128,.018),0 0 0 30px rgba(225,190,128,.014);pointer-events:none}
-.feature:hover{transform:translateY(-7px) rotateX(2deg);border-color:rgba(232,197,130,.7);box-shadow:0 23px 38px rgba(0,0,0,.4),0 0 26px rgba(213,174,103,.11),inset 0 1px 0 rgba(255,244,218,.12)}
-.feature.selected{border-color:var(--gold);background:linear-gradient(145deg,rgba(75,54,33,.98),rgba(30,25,23,.98));box-shadow:0 0 0 1px rgba(226,185,100,.35),0 18px 34px rgba(0,0,0,.35),0 0 30px rgba(226,185,100,.14),inset 0 1px 0 rgba(255,244,218,.12)}
-.f-icon{display:grid;place-items:center;width:48px;height:48px;margin-bottom:12px;border-radius:15px;background:linear-gradient(145deg,rgba(244,214,157,.22),rgba(133,91,43,.12));border:1px solid rgba(234,198,132,.36);box-shadow:0 8px 16px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.16);transform:translateZ(24px)}
-.f-icon svg{display:block;width:25px;height:25px;fill:none;stroke:#f0cf8e;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 4px rgba(226,185,100,.2))}
-.f-label{display:block;font-family:'Fraunces',Georgia,serif;font-size:clamp(16px,2vw,19px);font-weight:600;line-height:1.25;letter-spacing:.01em;color:#f4e8d2;transform:translateZ(16px)}
-.f-sub{display:block;margin-top:7px;font-size:12px;line-height:1.5;color:rgba(230,216,194,.68);transform:translateZ(10px)}
-@media(max-width:420px){.features{gap:10px}.feature{min-height:150px;padding:15px 13px;border-radius:18px}.f-icon{width:42px;height:42px;margin-bottom:10px}.f-icon svg{width:22px;height:22px}.f-label{font-size:15px!important}.f-sub{font-size:10px;line-height:1.4}}
-
 /* CHAT */
 #chatBox{min-height:1px}
 .row{display:flex;gap:10px;margin:14px 0;animation:fadeUp .45s ease both}
@@ -892,10 +878,10 @@ const CHART_PROMPT_MESSAGE = 'अब अपना Lagan Chart Prompt यहा�
 const NO_PROMPT_MESSAGE = 'कोई बात नहीं। अगर आपके पास अभी अपना Lagan Chart Prompt नहीं है, तो आप पहले हमारी वेबसाइट से अपना चार्ट बनवा सकते हैं। हमारे Swami Ji आपके जन्म-विवरण के आधार पर आपका व्यक्तिगत Lagan Chart Prompt तैयार करते हैं। इसमें लगभग 1–3 दिन का समय लग सकता है। आपको अपना तैयार Prompt मिलने के बाद उसे Turiya AI में paste करना होगा। फिर Turiya AI आपकी अपनी कुंडली के आधार पर आपके सवालों के जवाब देगा। आपकी तैयार रिपोर्ट और Prompt WhatsApp पर भेज दिए जाएंगे। यह Prompt ChatGPT, Gemini, Claude और Grok जैसे AI tools में भी इस्तेमाल किया जा सकता है। वेबसाइट पर Swarnima Janm Patrika विकल्प चुनें।';
 
 const FEATURES = [
-  {icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2"/></svg>', label:'Career & Finance', sub:'Career, profession, dhan aur vyapar'},
-  {icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.8c0 5.2-8.8 11-8.8 11s-8.8-5.8-8.8-11A4.8 4.8 0 0 1 12 6.1a4.8 4.8 0 0 1 8.8 2.7Z"/><path d="M8.5 12.2h7M12 8.7v7"/></svg>', label:'Marriage & Relationships', sub:'Vivah, jeevan saathi aur sambandh'},
-  {icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-4.8-2.5-7.5-6-7.5-10.2A7.5 7.5 0 0 1 12 3.3a7.5 7.5 0 0 1 7.5 7.5C19.5 15 16.8 18.5 12 21Z"/><path d="M12 20V9m0 5c-2.5-2.5-4.2-3-6-3m6 1c2.5-2.5 4.2-3 6-3M12 8c-1.5-1.7-1.7-3.1-1.7-4.2M12 8c1.5-1.7 1.7-3.1 1.7-4.2"/></svg>', label:'Spirituality & Enlightenment', sub:'Adhyatma, dhyan aur aantarik khoj'},
-  {icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.2"/><path d="M12 2v4M22 12h-4M12 22v-4M2 12h4M17.7 6.3l-2.8 2.8"/></svg>', label:'Karmic Patterns & Life Purpose', sub:'Karma aur jeevan ka uddeshya'}
+  {icon:'💼', label:'Career & Finance', sub:'Career, profession, dhan aur vyapar'},
+  {icon:'💍', label:'Marriage & Relationships', sub:'Vivah, jeevan saathi aur sambandh'},
+  {icon:'🕉️', label:'Spirituality & Enlightenment', sub:'Adhyatma, dhyan aur aantarik khoj'},
+  {icon:'✨', label:'Karmic Patterns & Life Purpose', sub:'Karma aur jeevan ka uddeshya'}
 ];
 const DEFAULT_SUGGESTIONS = {
   'Career & Finance': ['Mere career mein aage badhne ke liye kaunsi disha upyogi rahegi?','Dhan aur bachat ke mamle mein meri kundli kya sanket deti hai?','Kya apna vyapar karna mere liye anukool rahega?','Meri kaunsi skills career mein madad kar sakti hain?'],
