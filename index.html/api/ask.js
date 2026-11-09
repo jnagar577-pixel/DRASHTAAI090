@@ -486,7 +486,7 @@ async function handleChat(c, hash, b) {
   if (responseHasLagnaConflict(modelOutput, verifiedLagna)) {
     modelOutput = await callModel(c, [
       ...messages.slice(0, -1),
-      { role: 'system', content: 'CORRECTION REQUIRED: Your previous draft contradicted the verified D1 Lagna. The only authoritative Lagna is ' + verifiedLagna + '. Do not state any other sign as this person\\'s Lagna/Ascendant. Re-evaluate from the saved chart and answer again. If the chart does not support a conclusion, say so.' },
+      { role: 'system', content: 'CORRECTION REQUIRED: Your previous draft contradicted the verified D1 Lagna. The only authoritative Lagna is ' + verifiedLagna + '. Do not state any other sign as this person's Lagna/Ascendant. Re-evaluate from the saved chart and answer again. If the chart does not support a conclusion, say so.' },
       messages[messages.length - 1],
     ]);
     if (responseHasLagnaConflict(modelOutput, verifiedLagna)) {
