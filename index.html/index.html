@@ -1096,8 +1096,14 @@ function selectCategory(category){
   save();
   renderFeatures();
   clearChips();
-  input.placeholder = state.selectedCategory ? state.selectedCategory + ' se juda apna sawal likhiye...' : 'Pehle ek vishay chuniye...';
-  input.focus();
+  if(!state.selectedCategory) return;
+  const categoryQuestions = {
+    'Career & Finance': 'Meri kundli ke aadhar par Career & Finance ke baare mein margdarshan dijiye. Mere career, profession, dhan aur vyapar se jude mukhya sanket saral bhasha mein samjhaiye.',
+    'Marriage & Relationships': 'Meri kundli ke aadhar par Marriage & Relationships ke baare mein margdarshan dijiye. Vivah, jeevan saathi aur sambandhon se jude mukhya sanket saral bhasha mein samjhaiye.',
+    'Spirituality & Enlightenment': 'Meri kundli ke aadhar par Spirituality & Enlightenment ke baare mein margdarshan dijiye. Adhyatma, dhyan aur aantarik khoj se jude mukhya sanket saral bhasha mein samjhaiye.',
+    'Karmic Patterns & Life Purpose': 'Meri kundli ke aadhar par Karmic Patterns & Life Purpose ke baare mein margdarshan dijiye. Jeevan ke uddeshya aur karmic patterns se jude mukhya sanket saral bhasha mein samjhaiye.'
+  };
+  sendChat(categoryQuestions[state.selectedCategory], state.selectedCategory);
 }
 
 function showWebsiteGuidance(){
