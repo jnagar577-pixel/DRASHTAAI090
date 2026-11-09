@@ -209,6 +209,76 @@ function houseTable(lagan) {
   }).join('\n');
 }
 
+
+const RASHI_ALIASES = {
+  'मेष': ['मेष', 'aries'], 'वृषभ': ['वृषभ', 'वृष', 'taurus'],
+  'मिथुन': ['मिथुन', 'gemini'], 'कर्क': ['कर्क', 'cancer'],
+  'सिंह': ['सिंह', 'leo'], 'कन्या': ['कन्या', 'virgo'],
+  'तुला': ['तुला', 'libra'], 'वृश्चिक': ['वृश्चिक', 'scorpio'],
+  'धनु': ['धनु', 'sagittarius'], 'मकर': ['मकर', 'capricorn'],
+  'कुंभ': ['कुंभ', 'कुम्भ', 'kumbh', 'kumbha', 'aquarius'],
+  'मीन': ['मीन', 'pisces'],
+};
+
+function findRashi(value) {
+  const text = String(value || '').toLocaleLowerCase('hi').trim();
+  for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
+    for (const alias of aliases) {
+      const pattern = /^[a-z]+$/i.test(alias)
+        ? new RegExp('(?:^|[^a-z])' + alias + '(?:$|[^a-z])', 'i')
+        : new RegExp(alias);
+      if (pattern.test(text)) return rashi;
+    }
+  }
+  return '';
+}
+
+// Sirf explicitly labelled Lagna/Ascendant line ko source maana jaata hai.
+function extractChartLagna(source) {
+  const found = new Set();
+  const lines = String(source || '').split(/\r?\n/);
+  const label = /(?:lagna(?:\s*rashi)?|ascendant(?:\s*sign)?|rising\s*sign|लग्न(?:\s*राशि)?)\s*(?:[:=：-]|\bis\b)\s*(.+)/i;
+  for (const line of lines) {
+    const match = line.match(label);
+    if (!match) continue;
+    const value = match[1].split(/[;|]/)[0].trim();
+    const rashi = findRashi(value);
+    if (rashi) found.add(rashi);
+  }
+  return found.size === 1 ? { rashi: [...found][0], conflict: false } : {
+    rashi: '',
+    conflict: found.size > 1,
+  };
+}
+
+function responseHasLagnaConflict(output, verifiedLagna) {
+  const text = String(output || '').toLocaleLowerCase('hi');
+  for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
+    if (rashi === verifiedLagna) continue;
+    for (const alias of aliases) {
+      const token = /^[a-z]+$/i.test(alias)
+        ? '(?:^|[^a-z])' + alias + '(?:$|[^a-z])'
+        : alias;
+      const after = new RegExp(token + '\\s*(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna)', 'i');
+      const before = new RegExp('(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna)\\s*(?:है|का|की|:|-)?\\s*' + token, 'i');
+      if (after.test(text) || before.test(text)) return true;
+    }
+  }
+  return false;
+}
+
+function buildVerifiedChartAnchor(context) {
+  const parsed = extractChartLagna(context);
+  if (!parsed.rashi || parsed.conflict) return null;
+  return [
+    'VERIFIED CHART ANCHOR — HIGHEST PRIORITY:',
+    'Authoritative D1 Lagna/Ascendant: ' + parsed.rashi + '.',
+    'The 1st-house sign and the 12-house sign sequence below are deterministically derived from this Lagna. Never replace this Lagna with a sign mentioned elsewhere in the chart or chat.',
+    houseTable(parsed.rashi),
+    'Use only planetary placements explicitly present in the saved chart. Do not invent or relocate planets. If a placement is unclear, say the chart data does not establish it.',
+  ].join('\n');
+}
+
 function buildSummary(d) {
   return [
     `नाम: ${d.name}`,
@@ -386,6 +456,10 @@ async function handleChat(c, hash, b) {
   }));
 
   const context = conv.chart_summary;
+  const chartAnchor = buildVerifiedChartAnchor(context);
+  if (!chartAnchor) {
+    throw new HttpError(409, 'Saved chart mein ek clear, verified Lagna/Ascendant nahi mil raha. Kripya support se chart prompt verify karwayein; abhi prediction rok di gayi hai taaki galat kundli par reading na ho.');
+  }
   const category = cleanStr(b.category, 80);
   const allowedCategories = ['Career & Finance', 'Marriage & Relationships', 'Spirituality & Enlightenment', 'Karmic Patterns & Life Purpose'];
   if (category && !allowedCategories.includes(category)) {
@@ -398,14 +472,27 @@ async function handleChat(c, hash, b) {
     ? `CONSULTATION CATEGORY: ${category}\nCUSTOMER QUESTION: ${query}`
     : query;
 
-  const modelOutput = await callModel(c, [
-    ...(knowledge ? [{ role: 'system', content: `BRAND KNOWLEDGE (Swami ji, website, reports aur consultation ke baare mein sirf inhi se jawab do):\n${knowledge}` }] : []),
+  const messages = [
+    ...(knowledge ? [{ role: 'system', content: 'BRAND KNOWLEDGE (Swami ji, website, reports aur consultation ke baare mein sirf inhi se jawab do):\n' + knowledge }] : []),
     { role: 'system', content: SYSTEM_PROMPT },
-    { role: 'system', content: `D1 QUESTION-FOCUSED JYOTISH RULES (in supplied prompts ko follow karein; user ke actual sawal ke relevant factors hi analyse karein):\n${astrologyKnowledge}` },
-    { role: 'system', content: `KUNDLI DATA (sirf yahi data sach mana jaye):\n${context}` },
+    { role: 'system', content: 'D1 QUESTION-FOCUSED JYOTISH RULES (in supplied prompts ko follow karein; user ke actual sawal ke relevant factors hi analyse karein):\n' + astrologyKnowledge },
+    { role: 'system', content: 'KUNDLI DATA (sirf yahi data sach mana jaye):\n' + context },
     ...history,
+    { role: 'system', content: chartAnchor },
     { role: 'user', content: userContent },
-  ]);
+  ];
+  const verifiedLagna = extractChartLagna(context).rashi;
+  let modelOutput = await callModel(c, messages);
+  if (responseHasLagnaConflict(modelOutput, verifiedLagna)) {
+    modelOutput = await callModel(c, [
+      ...messages.slice(0, -1),
+      { role: 'system', content: 'CORRECTION REQUIRED: Your previous draft contradicted the verified D1 Lagna. The only authoritative Lagna is ' + verifiedLagna + '. Do not state any other sign as this person\\'s Lagna/Ascendant. Re-evaluate from the saved chart and answer again. If the chart does not support a conclusion, say so.' },
+      messages[messages.length - 1],
+    ]);
+    if (responseHasLagnaConflict(modelOutput, verifiedLagna)) {
+      throw new HttpError(502, 'Kundli ke Lagna ko lekar jawab mein mismatch mila, isliye galat reading bhejne ke bajay jawab rok diya gaya hai. Kripya dobara koshish karein.');
+    }
+  }
   const parsed = extractSuggestions(modelOutput);
   const text = parsed.text;
 
@@ -431,6 +518,13 @@ async function handleSaveChartPrompt(c, hash, b) {
     throw new HttpError(400, 'Yeh complete Lagan Chart Prompt nahi lag raha. Kripya apna poora chart prompt paste karein.');
   }
 
+  const chartLagna = extractChartLagna(raw);
+  if (chartLagna.conflict) {
+    throw new HttpError(400, 'Chart prompt mein ek se zyada alag Lagna rashiyan mili hain. Kripya ek spasht, verified Lagna/Ascendant line ke saath prompt dobara dein.');
+  }
+  if (!chartLagna.rashi) {
+    throw new HttpError(400, 'Chart prompt mein Lagna/Ascendant ki rashi spasht nahi mili. Kripya prompt mein “Lagna: Tula (Libra)” jaise ek clear label ke saath dobara save karein.');
+  }
   const conv = await ensureConversation(c, hash);
   if (!conv.name) throw new HttpError(409, 'Pehle apna naam batayein, phir Lagan Chart Prompt paste karein.');
   if (typeof conv.chart_summary === 'string' && conv.chart_summary.trim()) {
@@ -461,6 +555,10 @@ async function handleIntake(c, hash, b) {
   const v = validateIntake(b);
   if (v.error) throw new HttpError(400, v.error);
   const d = v.data;
+  const promptLagna = extractChartLagna(d.notes);
+  if (promptLagna.conflict || (promptLagna.rashi && promptLagna.rashi !== d.lagan_rashi)) {
+    throw new HttpError(400, 'Intake mein chuna gaya Lagna aur chart prompt ka Lagna match nahi kar rahe. Kripya janm-kundli ke verified Lagna ko ek jaisa karke dobara save karein.');
+  }
   const conv = await ensureConversation(c, hash);
   // Agar naam ya janm tithi badli hai, to purani baatcheet (purane insaan ki) hata do
   if (conv.name && (conv.name !== d.name || conv.dob !== d.dob)) {
