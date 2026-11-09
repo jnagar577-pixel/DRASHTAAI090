@@ -242,7 +242,7 @@ function findRashi(value) {
 function extractChartLagna(source) {
   const found = new Set();
   const lines = String(source || '').split(/\r?\n/);
-  const label = /(?:lagan(?:a)?(?:\s*rashi)?|ascendant(?:\s*sign)?|rising\s*sign|लग्न(?:\s*राशि)?)\s*(?:[:=：-]|\bis\b)\s*(.+)/i;
+  const label = /(?:(?:lagna|lagan)(?:\s*rashi)?|ascendant(?:\s*sign)?|rising\s*sign|लग्न(?:\s*राशि)?)\s*(?:[:=：-]|\bis\b)\s*(.+)/i;
   for (const line of lines) {
     const match = line.match(label);
     if (match) {
@@ -250,8 +250,12 @@ function extractChartLagna(source) {
       const rashi = findRashi(value);
       if (rashi) found.add(rashi);
     }
-    const reverse = line.match(/(मेष|वृषभ|मिथुन|कर्क|सिंह|कन्या|तुला|वृश्चिक|धनु|मकर|कुंभ|कुम्भ|मीन|aries|taurus|gemini|cancer|leo|virgo|libra|scorpio|sagittarius|capricorn|aquarius|pisces)\\s+(?:lagna|lagan|लग्न)\\b/i);
-    if (reverse) { const rashi = findRashi(reverse[1]); if (rashi) found.add(rashi); }
+    for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
+      if (aliases.some(alias => {
+        const token = /^[a-z]+$/i.test(alias) ? '(?:^|[^a-z])' + alias + '(?:$|[^a-z])' : alias;
+        return new RegExp(token + '\\s+(?:lagna|lagan|लग्न)\\b', 'i').test(line);
+      })) found.add(rashi);
+    }
   }
   return found.size === 1 ? { rashi: [...found][0], conflict: false } : {
     rashi: '',
@@ -267,7 +271,7 @@ function responseHasLagnaConflict(output, verifiedLagna) {
       const token = /^[a-z]+$/i.test(alias)
         ? '(?:^|[^a-z])' + alias + '(?:$|[^a-z])'
         : alias;
-      const after = new RegExp(token + '\\s*(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna)', 'i');
+      const after = new RegExp(token + '\\s*(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna|lagan)', 'i');
       const before = new RegExp('(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna)\\s*(?:है|का|की|:|-)?\\s*' + token, 'i');
       if (after.test(text) || before.test(text)) return true;
     }
@@ -277,7 +281,7 @@ function responseHasLagnaConflict(output, verifiedLagna) {
 
 const PLANET_ALIASES = {
   'सूर्य': ['सूर्य', 'surya', 'sun'],
-  'चंद्र': ['चंद्रमा', 'चंद्र', 'चन्द्रमा', 'चन्द्र', 'chandrama', 'chandra', 'moon'],
+  'चंद्र': ['चंद्रमा', 'चंद्र', 'चन्द्रमा', 'चन्द्र', 'chandrama', 'chandrma', 'chandra', 'moon'],
   'मंगल': ['मंगल', 'mangala', 'mangal', 'mars'],
   'बुध': ['बुध', 'budh', 'budha', 'mercury'],
   'गुरु': ['बृहस्पति', 'गुरु', 'brihaspati', 'guru', 'jupiter'],
@@ -318,8 +322,20 @@ function parseVerifiedPlanetPlacements(source, lagna) {
     const after = text.slice(marker.index + marker[0].length);
     const next = markers[i + 1];
     const segment = after.slice(0, next ? next.index - marker.index - marker[0].length : 500);
-    if (!/^(?:\s*(?:mein|me)\b|\s*में|\s*\d+\s*(?:planet|grah|ग्रह)\b)/i.test(after)) continue;
-    const planets = findPlanets(segment);
+    if (!/^(?:\s*(?:mein|me)\b|\s*में|\s*(?:isme|is\s+me)\b|\s*[:=–-]\s*|\s*\d+\s*(?:planet|grah|ग्रह)\b|\s*moksha\s+house\s+isme\b)/i.test(after)) continue;
+    const planets = findPlanets(segment).filter(planet => {
+      const aliases = PLANET_ALIASES[planet] || [];
+      return aliases.some(alias => {
+        const token = /^[a-z]+$/i.test(alias) ? '(?:^|[^a-z])' + alias + '(?:$|[^a-z])' : alias;
+        const re = new RegExp(token, 'ig');
+        let match;
+        while ((match = re.exec(segment))) {
+          const prefix = segment.slice(Math.max(0, match.index - 24), match.index);
+          if (!/(?:swami|lord|स्वामी|का\s+स्वामी)\s*$/i.test(prefix)) return true;
+        }
+        return false;
+      });
+    });
     if (!planets.length) continue;
     const signs = collectRashis(segment), sign = signs.length === 1 ? signs[0] : '';
     for (const planet of planets) {
@@ -542,7 +558,9 @@ async function handleChat(c, hash, b) {
     throw new HttpError(429, `Aaj ki ${DAILY_LIMIT} messages ki limit poori ho gayi hai 🙏 Kal phir baat kar sakte hain.`);
   }
 
-  // Old conversation messages are not supplied to the model; saved chart facts remain isolated.
+  // Only earlier customer questions are retained for conversational continuity. Prior AI interpretations are never supplied as facts.
+  const past = await sb(c, `messages?conversation_id=eq.${conv.id}&role=eq.user&select=role,content&order=id.desc&limit=${HISTORY_TURNS}`);
+  const history = (Array.isArray(past) ? past : []).reverse().map(m => ({ role: 'user', content: cleanStr(m.content, 500) }));
   const context = conv.chart_summary;
   const chartAnchor = buildVerifiedChartAnchor(context);
   if (!chartAnchor) {
@@ -568,6 +586,7 @@ async function handleChat(c, hash, b) {
     { role: 'system', content: 'D1 QUESTION-FOCUSED JYOTISH RULES (in supplied prompts ko follow karein; user ke actual sawal ke relevant factors hi analyse karein):\n' + astrologyKnowledge },
     { role: 'system', content: 'KUNDLI DATA (sirf yahi data sach mana jaye):\n' + context },
     { role: 'system', content: chartAnchor },
+    ...history,
     { role: 'user', content: userContent },
   ];
   let modelOutput = await callModel(c, messages);
