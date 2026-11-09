@@ -384,6 +384,26 @@ function responseHasPlanetHouseConflict(output, placements) {
   return false;
 }
 
+function responseHasPlanetSignConflict(output, placements) {
+  const text = String(output || '').toLocaleLowerCase('hi');
+  for (const [planet, item] of Object.entries(placements || {})) {
+    if (!item.sign) continue;
+    for (const planetAlias of PLANET_ALIASES[planet] || []) {
+      const p = /^[a-z]+$/i.test(planetAlias) ? '(?:^|[^a-z])' + planetAlias + '(?:$|[^a-z])' : planetAlias;
+      for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
+        if (rashi === item.sign) continue;
+        for (const signAlias of aliases) {
+          const s = /^[a-z]+$/i.test(signAlias) ? '(?:^|[^a-z])' + signAlias + '(?:$|[^a-z])' : signAlias;
+          const after = new RegExp(p + '[^.!?।\\n]{0,24}(?:in|mein|me|में)\\s*' + s + '(?:\\s*(?:rashi|राशि))?', 'i');
+          const direct = new RegExp(p + '\\s+' + s + '(?:\\s*(?:rashi|राशि))', 'i');
+          if (after.test(text) || direct.test(text)) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 function buildVerifiedChartAnchor(context) {
   const parsed = extractChartLagna(context);
   if (!parsed.rashi || parsed.conflict) return null;
@@ -603,7 +623,7 @@ async function handleChat(c, hash, b) {
     { role: 'user', content: userContent },
   ];
   let modelOutput = await callModel(c, messages);
-  const hasChartMismatch = output => responseHasLagnaConflict(output, verifiedLagna) || responseHasPlanetHouseConflict(output, verifiedPlacements);
+  const hasChartMismatch = output => responseHasLagnaConflict(output, verifiedLagna) || responseHasPlanetHouseConflict(output, verifiedPlacements) || responseHasPlanetSignConflict(output, verifiedPlacements);
   if (hasChartMismatch(modelOutput)) {
     modelOutput = await callModel(c, [
       ...messages.slice(0, -1),
