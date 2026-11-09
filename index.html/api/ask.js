@@ -393,7 +393,7 @@ function responseHasPlanetSignConflict(output, placements) {
       for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
         if (rashi === item.sign) continue;
         for (const signAlias of aliases) {
-          const s = /^[a-z]+$/i.test(signAlias) ? '(?:^|[^a-z])' + signAlias + '(?:$|[^a-z])' : signAlias;
+          const s = /^[a-z]+$/i.test(signAlias) ? signAlias + '(?![a-z])' : signAlias;
           const after = new RegExp(p + '[^.!?।\\n]{0,24}(?:in|mein|me|में)\\s*' + s + '(?:\\s*(?:rashi|राशि))?', 'i');
           const direct = new RegExp(p + '\\s+' + s + '(?:\\s*(?:rashi|राशि))', 'i');
           if (after.test(text) || direct.test(text)) return true;
