@@ -239,6 +239,19 @@ function findRashi(value) {
 }
 
 // Sirf explicitly labelled Lagna/Ascendant line ko source maana jaata hai.
+function extractD1Source(source) {
+  const lines = extractD1Source(source).split(/\\r?\\n/);
+  const hasD1Header = lines.some(line => /(?:^|\\b)(?:D1|Rashi Chart|Janma Kundli)(?:\\b|$)/i.test(line));
+  let section = hasD1Header ? 'before-d1' : 'default';
+  const kept = [];
+  for (const line of lines) {
+    if (/\\bD1\\b|Rashi Chart|Janma Kundli/i.test(line)) { section = 'd1'; kept.push(line); continue; }
+    if (/Arudha|Upapada|Navamsa|\\bD9\\b|Dashamsha|\\bD10\\b|अारूढ़|अरूढ़|उपपद/i.test(line)) { section = 'other'; continue; }
+    if (section === 'd1' || section === 'default') kept.push(line);
+  }
+  return kept.join('\\n');
+}
+
 function extractChartLagna(source) {
   const found = new Set();
   const lines = String(source || '').split(/\r?\n/);
@@ -272,7 +285,7 @@ function responseHasLagnaConflict(output, verifiedLagna) {
         ? '(?:^|[^a-z])' + alias + '(?:$|[^a-z])'
         : alias;
       const after = new RegExp(token + '\\s*(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna|lagan)', 'i');
-      const before = new RegExp('(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna)\\s*(?:है|का|की|:|-)?\\s*' + token, 'i');
+      const before = new RegExp('(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna|lagan)\\s*(?:है|का|की|:|-)?\\s*' + token, 'i');
       if (after.test(text) || before.test(text)) return true;
     }
   }
@@ -317,7 +330,7 @@ function parseVerifiedPlanetPlacements(source, lagna) {
   const pattern = /(?:\b(1[0-2]|[1-9])(?:st|nd|rd|th)?\s*(?:house|bhav)\b|भाव\s*(1[0-2]|[1-9]))\s*(?:(?:mein|me)\b|में)?/gi;
   const markers = [...text.matchAll(pattern)], placements = {}, conflicts = [];
   for (let i = 0; i < markers.length; i++) {
-    const marker = markers[i], house = Number(marker[1] || marker[2]);
+    const marker = markers[i], house = Number(marker[1] || marker[2] || marker[3]);
     if (!Number.isInteger(house) || house < 1 || house > 12) continue;
     const after = text.slice(marker.index + marker[0].length);
     const next = markers[i + 1];
