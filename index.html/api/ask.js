@@ -36,21 +36,15 @@ const SYSTEM_PROMPT = `Tum "Turiya AI" ho, Swami Atma Jagran ke liye ek shant, p
 - Upay tabhi batao jab user saaf taur par poochhe. Upay saral, nishulk, surakshit aur rozmarra ke vyavahar se jude hon; mehange ratna ya commercial pitch mat do.
 
 4. JAWAB DENE KA TAREEKA
-- Pehle user ke sawal ka seedha jawab do. Uske baad relevant D1 sanketon ko saral, natural bhasha mein samjhao; technical calculations aur grahon ki lambi lists customer ko mat dikhao.
-- Jawab ko chhote, meaningful paragraphs mein rakho. Bina zaroorat headings ya numbered lists mat banao.
+- Pehle user ke sawal ka saar samjho, phir usi se sambandhit D1 sanketon ko internally dekho.
+- Seedhi, meaningful aur samajhne layak baat kaho. Jitni baat zaroori ho utna hi likho.
 - Nateeje ko sambhavana aur paramparik jyotishiya vyakhya ke roop mein rakho; nishchit bhavishyavani mat karo.
-- Har personal consultation ke ant mein 3–4 chhote, specific aur context-aware follow-up questions taiyar karo. Ye sawal customer ke abhi poochhe gaye sawal, chuni hui category, diye gaye D1 chart aur jawab ke natural next steps se sambandhit hon. Generic ya random suggestions mat do.
-- Apne jawab ke baad suggestions ko sirf is exact machine-readable format mein do, taaki application unhe alag buttons mein dikha sake:
-[[DRASHTA_SUGGESTIONS]]
-["Pehla relevant sawal?", "Doosra relevant sawal?", "Teesra relevant sawal?", "Chautha relevant sawal?"]
-[[/DRASHTA_SUGGESTIONS]]
-- Marker ke bahar sirf customer-facing jawab rakho. Suggestions ko jawab ke paragraph mein dobara mat likho. Har suggestion ek chhota, spasht sawal ho.
 - User agar sirf apni baat share kar raha ho, to har baat ko kundli-analysis mein badalne ke bajay samvedansheel tareeke se suno.`;
 
 const RASHIS = ['मेष','वृषभ','मिथुन','कर्क','सिंह','कन्या','तुला','वृश्चिक','धनु','मकर','कुंभ','मीन'];
 const LIMITS = { name: 100, dob: 10, birth_time: 5, birth_place: 150, notes: 60000, query: 1000, rashi: 20 };
 const DAILY_LIMIT = 100;
-const HISTORY_TURNS = 6;
+const HISTORY_TURNS = 10;
 const DEFAULT_MODEL = 'openai/gpt-oss-120b';
 const FALLBACK_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
 const BUSY_MSG = 'Abhi jawab taiyar karne mein thodi der lag rahi hai 🙏 Kripya kuch der baad phir koshish karein.';
@@ -268,27 +262,6 @@ function extractResponseText(data) {
   return '';
 }
 
-function extractSuggestions(output) {
-  const marker = /\[\[DRASHTA_SUGGESTIONS\]\]\s*([\s\S]*?)\s*\[\[\/DRASHTA_SUGGESTIONS\]\]/i;
-  const match = String(output || '').match(marker);
-  if (!match) return { text: String(output || '').trim(), suggestions: [] };
-  let suggestions = [];
-  try {
-    const parsed = JSON.parse(match[1]);
-    if (Array.isArray(parsed)) {
-      suggestions = parsed
-        .filter(item => typeof item === 'string')
-        .map(item => item.trim())
-        .filter(Boolean)
-        .slice(0, 4);
-    }
-  } catch {}
-  return {
-    text: String(output || '').replace(match[0], '').trim(),
-    suggestions,
-  };
-}
-
 async function callModel(c, messages) {
   const models = [...new Set([c.primaryModel, ...FALLBACK_MODELS])];
   let lastErr = new Error('Koi model available nahi');
@@ -344,20 +317,12 @@ async function callModel(c, messages) {
 }
 
 /* ---------- Brand knowledge (Supabase knowledge_base) ---------- */
-async function loadKnowledge(c, query) {
-  const brandQuestion = /swami|atma jagran|website|website par|report|lagan maya sutra|service|seva|price|fees|contact|whatsapp|appointment/i.test(query);
-  if (!brandQuestion) return '';
+async function loadKnowledge(c) {
   try {
     const rows = await sb(c, 'knowledge_base?select=topic,content&active=eq.true&order=id.asc&limit=20');
-    let total = 0;
-    const parts = [];
-    for (const row of (Array.isArray(rows) ? rows : [])) {
-      const part = `### ${row.topic}\n${String(row.content).slice(0, 1200)}`;
-      if (total + part.length > 4500) break;
-      parts.push(part);
-      total += part.length;
-    }
-    return parts.join('\n\n');
+    return (Array.isArray(rows) ? rows : [])
+      .map(r => `### ${r.topic}\n${String(r.content).slice(0, 4000)}`)
+      .join('\n\n');
   } catch (e) {
     console.error('knowledge_base load failed:', e.status || e.message);
     return '';
@@ -382,32 +347,22 @@ async function handleChat(c, hash, b) {
   const past = await sb(c, `messages?conversation_id=eq.${conv.id}&select=role,content&order=id.desc&limit=${HISTORY_TURNS}`);
   const history = (Array.isArray(past) ? past : []).reverse().map(m => ({
     role: m.role,
-    content: cleanStr(m.content, 500),
+    content: cleanStr(m.content, 800),
   }));
 
   const context = conv.chart_summary;
-  const category = cleanStr(b.category, 80);
-  const allowedCategories = ['Career & Finance', 'Marriage & Relationships', 'Spirituality & Enlightenment', 'Karmic Patterns & Life Purpose'];
-  if (category && !allowedCategories.includes(category)) {
-    throw new HttpError(400, 'Kripya diye gaye chaar vishayon mein se ek chunein.');
-  }
 
-  const knowledge = await loadKnowledge(c, query);
+  const knowledge = await loadKnowledge(c);
   const astrologyKnowledge = getAstrologyKnowledge(query);
-  const userContent = category
-    ? `CONSULTATION CATEGORY: ${category}\nCUSTOMER QUESTION: ${query}`
-    : query;
 
-  const modelOutput = await callModel(c, [
-    ...(knowledge ? [{ role: 'system', content: `BRAND KNOWLEDGE (Swami ji, website, reports aur consultation ke baare mein sirf inhi se jawab do):\n${knowledge}` }] : []),
+  const text = await callModel(c, [
+    { role: 'system', content: `BRAND KNOWLEDGE (Swami ji, website, reports aur consultation ke baare mein sirf inhi se jawab do):\n${knowledge || '(abhi uplabdh nahi)'}` },
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'system', content: `D1 QUESTION-FOCUSED JYOTISH RULES (in supplied prompts ko follow karein; user ke actual sawal ke relevant factors hi analyse karein):\n${astrologyKnowledge}` },
     { role: 'system', content: `KUNDLI DATA (sirf yahi data sach mana jaye):\n${context}` },
     ...history,
-    { role: 'user', content: userContent },
+    { role: 'user', content: query },
   ]);
-  const parsed = extractSuggestions(modelOutput);
-  const text = parsed.text;
 
   const rows = await sb(c, 'messages', {
     method: 'POST',
@@ -418,7 +373,7 @@ async function handleChat(c, hash, b) {
     prefer: 'return=representation',
   });
   const bot = rows.find(r => r.role === 'assistant');
-  return { text, suggestions: parsed.suggestions, messageId: bot.id, remaining: Math.max(0, DAILY_LIMIT - used) };
+  return { text, messageId: bot.id, remaining: Math.max(0, DAILY_LIMIT - used) };
 }
 
 async function handleSaveChartPrompt(c, hash, b) {

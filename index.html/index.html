@@ -66,7 +66,6 @@ main{max-width:880px;margin:0 auto;padding:18px 18px 190px}
   display:flex;flex-direction:column;gap:4px;animation:fadeUp .55s ease both;
   transition:transform .25s,box-shadow .25s,border-color .25s}
 .feature:hover{transform:translateY(-3px);border-color:rgba(226,185,100,.55);box-shadow:0 14px 34px -14px rgba(226,185,100,.5)}
-.feature.selected{border-color:var(--gold);box-shadow:0 0 0 2px rgba(226,185,100,.2),0 10px 28px -16px rgba(226,185,100,.5);background:linear-gradient(160deg,rgba(226,185,100,.16),var(--glass))}
 .feature:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .f-icon{font-size:22px;line-height:1.2}
 .f-label{font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:600}
@@ -878,17 +877,23 @@ const CHART_PROMPT_MESSAGE = 'अब अपना Lagan Chart Prompt यहा�
 const NO_PROMPT_MESSAGE = 'कोई बात नहीं। अगर आपके पास अभी अपना Lagan Chart Prompt नहीं है, तो आप पहले हमारी वेबसाइट से अपना चार्ट बनवा सकते हैं। हमारे Swami Ji आपके जन्म-विवरण के आधार पर आपका व्यक्तिगत Lagan Chart Prompt तैयार करते हैं। इसमें लगभग 1–3 दिन का समय लग सकता है। आपको अपना तैयार Prompt मिलने के बाद उसे Turiya AI में paste करना होगा। फिर Turiya AI आपकी अपनी कुंडली के आधार पर आपके सवालों के जवाब देगा। आपकी तैयार रिपोर्ट और Prompt WhatsApp पर भेज दिए जाएंगे। यह Prompt ChatGPT, Gemini, Claude और Grok जैसे AI tools में भी इस्तेमाल किया जा सकता है। वेबसाइट पर Swarnima Janm Patrika विकल्प चुनें।';
 
 const FEATURES = [
-  {icon:'💼', label:'Career & Finance', sub:'Career, profession, dhan aur vyapar'},
-  {icon:'💍', label:'Marriage & Relationships', sub:'Vivah, jeevan saathi aur sambandh'},
-  {icon:'🕉️', label:'Spirituality & Enlightenment', sub:'Adhyatma, dhyan aur aantarik khoj'},
-  {icon:'✨', label:'Karmic Patterns & Life Purpose', sub:'Karma aur jeevan ka uddeshya'}
+  {icon:'🪔', label:'Kundli Saar', sub:'Ek nazar mein poora saar',
+   prompt:'Meri kundli ka chhota saar dijiye: lagan, mukhya bhav, aur ek sabse zaroori baat. Warm aur saral bhasha mein.'},
+  {icon:'🌟', label:'Career & Karma', sub:'Kaam aur margdarshan',
+   prompt:'Meri kundli ke adhar par kaam aur career ke baare mein soft aur saaf margdarshan dijiye. Jo data hai usi par dekhiye, aur jo kami hai wo bhi batayiye.'},
+  {icon:'💍', label:'Vivah & Rishte', sub:'Rishton ki samajh',
+   prompt:'Meri kundli ke adhar par rishton aur vivah ke baare mein gentle margdarshan dijiye. Agar zaroori ho to batayiye ki kaunsi aur jaankari se baat aur saaf ho sakti hai.'},
+  {icon:'💰', label:'Dhan & Vyapar', sub:'Arthik sthirta',
+   prompt:'Meri kundli ke adhar par dhan, kamai aur vyapar ke baare mein sahi aur santulit margdarshan dijiye.'},
+  {icon:'🧘', label:'Man & Shanti', sub:'Bhavnaon ka santulan',
+   prompt:'Meri kundli ke adhar par mann ki shanti aur bhavnatmak santulan ke baare mein sahaj margdarshan dijiye.'},
+  {icon:'🕉️', label:'Saral Upay', sub:'Roz ki chhoti aadatein',
+   prompt:'Meri kundli ke hisaab se koi saral, sahaj aur bina kharche wale upay batayiye, jaise roz ki chhoti aadatein ya soch. Koi mehenga upay mat sujhayiye.'},
+  {icon:'🌅', label:'Aaj ka Margdarshan', sub:'Aaj ke din ke liye',
+   prompt:'Aaj apne din ko shant aur sachet tareeke se jeene ke liye ek chhota adhyatmik margdarshan dijiye. Koi grah-gochar ya bhavishyavani nahi.'},
+  {icon:'✨', label:'Apna sawal likhein', sub:'Kuch bhi poochhiye', prompt:null}
 ];
-const DEFAULT_SUGGESTIONS = {
-  'Career & Finance': ['Mere career mein aage badhne ke liye kaunsi disha upyogi rahegi?','Dhan aur bachat ke mamle mein meri kundli kya sanket deti hai?','Kya apna vyapar karna mere liye anukool rahega?','Meri kaunsi skills career mein madad kar sakti hain?'],
-  'Marriage & Relationships': ['Mera jeevan saathi swabhav se kaisa ho sakta hai?','Shaadi ke baad mere aur partner ke sambandh kaise rahenge?','Kya vivaah ke baad jeevan mein sukh aur sthirta badhegi?','Partner ke saath samajh aur bharosa kaise mazboot rahega?'],
-  'Spirituality & Enlightenment': ['Meri kundli meri aadhyatmik ruchi ke baare mein kya batati hai?','Dhyan aur ekant mere jeevan mein kya bhoomika nibha sakte hain?','Grihasth jeevan aur adhyatma mein santulan kaise rahega?','Meri aantarik khoj ko kaunsi disha sahara de sakti hai?'],
-  'Karmic Patterns & Life Purpose': ['Mere jeevan ka mukhya uddeshya kis disha mein ho sakta hai?','Kaun se purane patterns mujhe samajhne chahiye?','Meri zimmedariyon aur karm ke beech kya sambandh hai?','Main apni kshamata ko sahi disha mein kaise laga sakta hoon?']
-};
+const FOLLOWUPS = ['Aur vistar se samjhayein','Iske chhote upay batayein','Mere swabhav ke baare mein batayein','Is baat ko apne jeevan mein kaise lagu karun?'];
 
 const $ = id => document.getElementById(id);
 const chatBox = $('chatBox'), input = $('userInput'), chips = $('quickChips'), features = $('features'), hero = $('hero');
@@ -905,7 +910,6 @@ function loadState(){
 const state = loadState();
 state.name = typeof state.name === 'string' ? state.name : '';
 state.hasKundli = state.hasKundli === true;
-state.selectedCategory = FEATURES.some(f => f.label === state.selectedCategory) ? state.selectedCategory : '';
 function save(){ try{ localStorage.setItem(K_STATE, JSON.stringify(state)); }catch(e){} }
 function pushHistory(role, text, id){ state.history.push({role, text, id: id ?? null}); save(); }
 function firstName(){ return state.name.trim().split(/\s+/)[0] || ''; }
@@ -1060,11 +1064,10 @@ function renderFeatures(){
   if(!state.hasKundli) return;
   FEATURES.forEach((f, i) => {
     const b = document.createElement('button');
-    b.className = 'feature' + (state.selectedCategory === f.label ? ' selected' : '');
-    b.setAttribute('aria-pressed', String(state.selectedCategory === f.label));
+    b.className = 'feature';
     b.style.animationDelay = (i * 60) + 'ms';
     b.innerHTML = `<span class="f-icon">${f.icon}</span><span class="f-label">${f.label}</span><span class="f-sub">${f.sub}</span>`;
-    b.onclick = () => selectCategory(f.label);
+    b.onclick = () => runFeature(f);
     features.appendChild(b);
   });
 }
@@ -1091,19 +1094,9 @@ function renderNumCard(n){
 }
 
 /* ---------- CHAT ---------- */
-function selectCategory(category){
-  state.selectedCategory = FEATURES.some(f => f.label === category) ? category : '';
-  save();
-  renderFeatures();
-  clearChips();
-  if(!state.selectedCategory) return;
-  const categoryQuestions = {
-    'Career & Finance': 'Meri kundli ke aadhar par Career & Finance ke baare mein margdarshan dijiye. Mere career, profession, dhan aur vyapar se jude mukhya sanket saral bhasha mein samjhaiye.',
-    'Marriage & Relationships': 'Meri kundli ke aadhar par Marriage & Relationships ke baare mein margdarshan dijiye. Vivah, jeevan saathi aur sambandhon se jude mukhya sanket saral bhasha mein samjhaiye.',
-    'Spirituality & Enlightenment': 'Meri kundli ke aadhar par Spirituality & Enlightenment ke baare mein margdarshan dijiye. Adhyatma, dhyan aur aantarik khoj se jude mukhya sanket saral bhasha mein samjhaiye.',
-    'Karmic Patterns & Life Purpose': 'Meri kundli ke aadhar par Karmic Patterns & Life Purpose ke baare mein margdarshan dijiye. Jeevan ke uddeshya aur karmic patterns se jude mukhya sanket saral bhasha mein samjhaiye.'
-  };
-  sendChat(categoryQuestions[state.selectedCategory], state.selectedCategory);
+function runFeature(f){
+  if(!f.prompt){ input.focus(); return; }
+  sendChat(f.prompt, f.label);
 }
 
 function showWebsiteGuidance(){
@@ -1136,12 +1129,18 @@ async function submitChartPrompt(prompt){
     state.hasKundli = r.hasKundli === true;
     if(r.name) state.name = r.name;
     save(); setComposerMode(); renderFeatures();
-    state.selectedCategory = '';
-    save();
     const message = SAVED_KUNDLI_MESSAGE;
     addBot(message); pushHistory('bot', message);
-    clearChips();
-    renderFeatures();
+    setChips(['Career & Karma','Vivah & Rishte','Man & Shanti','Apna sawal likhein'], label => {
+      clearChips();
+      if(label === 'Apna sawal likhein'){ input.focus(); return; }
+      const prompts = {
+        'Career & Karma':'Mere career aur karm ke baare mein meri kundli ke aadhar par margdarshan dijiye.',
+        'Vivah & Rishte':'Mere sambandhon aur vivah ke baare mein meri kundli ke aadhar par margdarshan dijiye.',
+        'Man & Shanti':'Mere mann aur bhavnatmak santulan ke baare mein meri kundli ke aadhar par margdarshan dijiye.'
+      };
+      sendChat(prompts[label], label);
+    });
   }catch(e){
     hideThinking();
     addBot(e.message);
@@ -1198,34 +1197,27 @@ async function sendChat(query, display){
     await submitChartPrompt(query);
     return;
   }
-  if(!state.selectedCategory){
-    addBot('🙏 Pehle upar diye gaye chaar vishayon mein se ek chuniye, phir apna sawal likhiye.');
-    renderFeatures();
-    return;
-  }
   clearChips();
   const shown = display ?? query;
   addUser(shown); pushHistory('user', shown);
   updateHero();
-  askBackend(query, state.selectedCategory);
+  askBackend(query);
 }
 
-async function askBackend(query, category=state.selectedCategory){
+async function askBackend(query, {followups=true} = {}){
   showThinking();
   try{
-    const r = await api({action:'chat', query, category});
+    const r = await api({action:'chat', query});
     hideThinking();
     state.remaining = r.remaining; renderLimit();
     addBot(r.text, {id: r.messageId});
     pushHistory('bot', r.text, r.messageId);
-    const suggestions = Array.isArray(r.suggestions) && r.suggestions.length >= 3
-      ? r.suggestions.slice(0, 4)
-      : (DEFAULT_SUGGESTIONS[category] || []).slice(0, 4);
-    if(suggestions.length){
-      setChips(suggestions, label => {
+    if(followups){
+      setChips(FOLLOWUPS.concat(['Kuch aur poochhna hai']), label => {
         clearChips();
+        if(label === 'Kuch aur poochhna hai'){ input.focus(); return; }
         sendChat(label);
-      });
+      }, true);
     }
   }catch(e){
     hideThinking();
@@ -1234,7 +1226,7 @@ async function askBackend(query, category=state.selectedCategory){
     addBot(e.message, {});
     pushHistory('bot', e.message);
     if(e.status !== 429){
-      setChips(['🔁 Dobara koshish karein'], () => { clearChips(); askBackend(query, category); });
+      setChips(['🔁 Dobara koshish karein'], () => { clearChips(); askBackend(query); });
     }
   }
 }
