@@ -211,18 +211,13 @@ function houseTable(lagan) {
 
 
 const RASHI_ALIASES = {
-  'मेष': ['मेष', 'mesh', 'mesha', 'aries'],
-  'वृषभ': ['वृषभ', 'वृष', 'vrishabh', 'vrishabha', 'taurus'],
-  'मिथुन': ['मिथुन', 'mithun', 'gemini'],
-  'कर्क': ['कर्क', 'kark', 'karaka', 'cancer'],
-  'सिंह': ['सिंह', 'singh', 'simha', 'leo'],
-  'कन्या': ['कन्या', 'kanya', 'virgo'],
-  'तुला': ['तुला', 'tula', 'libra'],
-  'वृश्चिक': ['वृश्चिक', 'vrishchik', 'vrischika', 'scorpio'],
-  'धनु': ['धनु', 'dhanu', 'sagittarius'],
-  'मकर': ['मकर', 'makar', 'makara', 'capricorn'],
+  'मेष': ['मेष', 'aries'], 'वृषभ': ['वृषभ', 'वृष', 'taurus'],
+  'मिथुन': ['मिथुन', 'gemini'], 'कर्क': ['कर्क', 'cancer'],
+  'सिंह': ['सिंह', 'leo'], 'कन्या': ['कन्या', 'virgo'],
+  'तुला': ['तुला', 'libra'], 'वृश्चिक': ['वृश्चिक', 'scorpio'],
+  'धनु': ['धनु', 'sagittarius'], 'मकर': ['मकर', 'capricorn'],
   'कुंभ': ['कुंभ', 'कुम्भ', 'kumbh', 'kumbha', 'aquarius'],
-  'मीन': ['मीन', 'meen', 'mina', 'pisces'],
+  'मीन': ['मीन', 'pisces'],
 };
 
 function findRashi(value) {
@@ -239,36 +234,16 @@ function findRashi(value) {
 }
 
 // Sirf explicitly labelled Lagna/Ascendant line ko source maana jaata hai.
-function extractD1Source(source) {
-  const lines = String(source || '').split(/\r?\n/);
-  const hasD1Header = lines.some(line => /(?:^|\b)(?:D1|Rashi Chart|Janma Kundli)(?:\b|$)/i.test(line));
-  let section = hasD1Header ? 'before-d1' : 'default';
-  const kept = [];
-  for (const line of lines) {
-    if (/\bD1\b|Rashi Chart|Janma Kundli/i.test(line)) { section = 'd1'; kept.push(line); continue; }
-    if (/Arudha|Upapada|Navamsa|\bD9\b|Dashamsha|\bD10\b|अारूढ़|अरूढ़|उपपद/i.test(line)) { section = 'other'; continue; }
-    if (section === 'd1' || section === 'default') kept.push(line);
-  }
-  return kept.join('\n');
-}
-
 function extractChartLagna(source) {
   const found = new Set();
-  const lines = extractD1Source(source).split(/\r?\n/);
-  const label = /(?:(?:lagna|lagan)(?:\s*rashi)?|ascendant(?:\s*sign)?|rising\s*sign|लग्न(?:\s*राशि)?)\s*(?:[:=：-]|\bis\b)\s*(.+)/i;
+  const lines = String(source || '').split(/\r?\n/);
+  const label = /(?:lagna(?:\s*rashi)?|ascendant(?:\s*sign)?|rising\s*sign|लग्न(?:\s*राशि)?)\s*(?:[:=：-]|\bis\b)\s*(.+)/i;
   for (const line of lines) {
     const match = line.match(label);
-    if (match) {
-      const value = match[1].split(/[;|]/)[0].trim();
-      const rashi = findRashi(value);
-      if (rashi) found.add(rashi);
-    }
-    for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
-      if (aliases.some(alias => {
-        const token = /^[a-z]+$/i.test(alias) ? '(?:^|[^a-z])' + alias : alias;
-        return new RegExp(token + '\\s+(?:lagna|lagan|लग्न)\\b', 'i').test(line);
-      })) found.add(rashi);
-    }
+    if (!match) continue;
+    const value = match[1].split(/[;|]/)[0].trim();
+    const rashi = findRashi(value);
+    if (rashi) found.add(rashi);
   }
   return found.size === 1 ? { rashi: [...found][0], conflict: false } : {
     rashi: '',
@@ -284,121 +259,9 @@ function responseHasLagnaConflict(output, verifiedLagna) {
       const token = /^[a-z]+$/i.test(alias)
         ? '(?:^|[^a-z])' + alias + '(?:$|[^a-z])'
         : alias;
-      const after = new RegExp(token + '\\s*(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna|lagan)', 'i');
-      const before = new RegExp('(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna|lagan)\\s*(?:है|का|की|:|-)?\\s*' + token, 'i');
+      const after = new RegExp(token + '\\s*(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna)', 'i');
+      const before = new RegExp('(?:लग्न|लग्न राशि|लग्नराशि|ascendant|lagna)\\s*(?:है|का|की|:|-)?\\s*' + token, 'i');
       if (after.test(text) || before.test(text)) return true;
-    }
-  }
-  return false;
-}
-
-const PLANET_ALIASES = {
-  'सूर्य': ['सूर्य', 'surya', 'sun'],
-  'चंद्र': ['चंद्रमा', 'चंद्र', 'चन्द्रमा', 'चन्द्र', 'chandrama', 'chandrma', 'chandra', 'moon'],
-  'मंगल': ['मंगल', 'mangala', 'mangal', 'mars'],
-  'बुध': ['बुध', 'budh', 'budha', 'mercury'],
-  'गुरु': ['बृहस्पति', 'गुरु', 'brihaspati', 'guru', 'jupiter'],
-  'शुक्र': ['शुक्र', 'shukra', 'venus'],
-  'शनि': ['शनि', 'shani', 'saturn'],
-  'राहु': ['राहु', 'राहू', 'rahu'],
-  'केतु': ['केतु', 'ketu'],
-};
-
-function collectRashis(value) {
-  const text = String(value || '').toLocaleLowerCase('hi');
-  const found = new Set();
-  for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
-    for (const alias of aliases) {
-      const pattern = /^[a-z]+$/i.test(alias) ? new RegExp('(?:^|[^a-z])' + alias + '(?:$|[^a-z])', 'i') : new RegExp(alias);
-      if (pattern.test(text)) found.add(rashi);
-    }
-  }
-  return [...found];
-}
-
-function findPlanets(value) {
-  const text = String(value || '').toLocaleLowerCase('hi');
-  const found = [];
-  for (const [planet, aliases] of Object.entries(PLANET_ALIASES)) {
-    if (aliases.some(alias => ( /^[a-z]+$/i.test(alias) ? new RegExp('(?:^|[^a-z])' + alias + '(?:$|[^a-z])', 'i') : new RegExp(alias)).test(text))) found.push(planet);
-  }
-  return found;
-}
-
-function parseVerifiedPlanetPlacements(source, lagna) {
-  const text = extractD1Source(source);
-  const pattern = /(?:\b(1[0-2]|[1-9])(?:st|nd|rd|th)?\s*(?:house|bhav)\b|\b(?:house|bhav)\s*(1[0-2]|[1-9])\b|भाव\s*(1[0-2]|[1-9]))/gi;
-  const markers = [...text.matchAll(pattern)], placements = {}, conflicts = [];
-  for (let i = 0; i < markers.length; i++) {
-    const marker = markers[i], house = Number(marker[1] || marker[2] || marker[3]);
-    if (!Number.isInteger(house) || house < 1 || house > 12) continue;
-    const after = text.slice(marker.index + marker[0].length);
-    const next = markers[i + 1];
-    const segment = after.slice(0, next ? next.index - marker.index - marker[0].length : 500);
-    if (!/^(?:\s*(?:mein|me)\b|\s*में|\s*(?:isme|is\s+me)\b|\s*[:=–-]\s*|\s*\d+\s*(?:planet|grah|ग्रह)\b|\s*moksha\s+house\s+isme\b)/i.test(after)) continue;
-    const planets = findPlanets(segment).filter(planet => {
-      const aliases = PLANET_ALIASES[planet] || [];
-      return aliases.some(alias => {
-        const token = /^[a-z]+$/i.test(alias) ? '(?:^|[^a-z])' + alias + '(?:$|[^a-z])' : alias;
-        const re = new RegExp(token, 'ig');
-        let match;
-        while ((match = re.exec(segment))) {
-          const prefix = segment.slice(Math.max(0, match.index - 24), match.index);
-          if (!/(?:swami|lord|स्वामी|का\s+स्वामी)\s*$/i.test(prefix)) return true;
-        }
-        return false;
-      });
-    });
-    if (!planets.length) continue;
-    const signs = collectRashis(segment), sign = signs.length === 1 ? signs[0] : '';
-    for (const planet of planets) {
-      if (signs.length > 1) conflicts.push(planet + ': multiple signs stated in house ' + house);
-      if (placements[planet] && placements[planet].house !== house) conflicts.push(planet + ': conflicting house placements');
-      else if (!placements[planet]) placements[planet] = { house, sign };
-      else if (placements[planet].sign && sign && placements[planet].sign !== sign) conflicts.push(planet + ': conflicting signs');
-      else if (!placements[planet].sign && sign) placements[planet].sign = sign;
-    }
-  }
-  const index = RASHIS.indexOf(lagna);
-  if (index >= 0) for (const [planet, item] of Object.entries(placements)) {
-    if (!item.sign) continue;
-    const expected = RASHIS[(index + item.house - 1) % 12];
-    if (item.sign !== expected) conflicts.push(planet + ': house/sign mismatch (expected ' + expected + ', found ' + item.sign + ')');
-  }
-  return { placements, conflicts: [...new Set(conflicts)] };
-}
-
-function responseHasPlanetHouseConflict(output, placements) {
-  const text = String(output || '').toLocaleLowerCase('hi');
-  for (const [planet, item] of Object.entries(placements || {})) for (const alias of PLANET_ALIASES[planet] || []) {
-    const p = /^[a-z]+$/i.test(alias) ? '(?:^|[^a-z])' + alias + '(?:$|[^a-z])' : alias;
-    const h = '(1[0-2]|[1-9])(?:st|nd|rd|th)?\\s*(?:house|bhav)|भाव\\s*(1[0-2]|[1-9])';
-    const a = new RegExp(p + '[^.!?।\\n]{0,45}(?:in|mein|me|में|स्थित|sits in)[^.!?।\\n]{0,15}' + h, 'i');
-    const z = new RegExp(h + '[^.!?।\\n]{0,25}(?:mein|me|में)[^.!?।\\n]{0,20}' + p, 'i');
-    for (const re of [a,z]) {
-      const m = text.match(re); if (!m) continue;
-      const n = m[1] ? Number(m[1]) : Number(m[2]);
-      if (Number.isInteger(n) && n !== item.house) return true;
-    }
-  }
-  return false;
-}
-
-function responseHasPlanetSignConflict(output, placements) {
-  const text = String(output || '').toLocaleLowerCase('hi');
-  for (const [planet, item] of Object.entries(placements || {})) {
-    if (!item.sign) continue;
-    for (const planetAlias of PLANET_ALIASES[planet] || []) {
-      const p = /^[a-z]+$/i.test(planetAlias) ? '(?:^|[^a-z])' + planetAlias : planetAlias;
-      for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
-        if (rashi === item.sign) continue;
-        for (const signAlias of aliases) {
-          const s = /^[a-z]+$/i.test(signAlias) ? signAlias + '(?![a-z])' : signAlias;
-          const after = new RegExp(p + '[^.!?।\\n]{0,24}(?:in|mein|me|में)\\s*' + s + '(?:\\s*(?:rashi|राशि))?', 'i');
-          const direct = new RegExp(p + '\\s+' + s + '(?:\\s*(?:rashi|राशि))', 'i');
-          if (after.test(text) || direct.test(text)) return true;
-        }
-      }
     }
   }
   return false;
@@ -407,17 +270,12 @@ function responseHasPlanetSignConflict(output, placements) {
 function buildVerifiedChartAnchor(context) {
   const parsed = extractChartLagna(context);
   if (!parsed.rashi || parsed.conflict) return null;
-  const verified = parseVerifiedPlanetPlacements(context, parsed.rashi);
-  if (verified.conflicts.length) return null;
-  const rows = Object.entries(verified.placements).map(([planet, item]) => 'Verified D1 placement — ' + planet + ': house ' + item.house + (item.sign ? ', sign ' + item.sign : '') + '.');
   return [
     'VERIFIED CHART ANCHOR — HIGHEST PRIORITY:',
     'Authoritative D1 Lagna/Ascendant: ' + parsed.rashi + '.',
-    'The 12-house sign sequence below is derived only from this verified Lagna.',
+    'The 1st-house sign and the 12-house sign sequence below are deterministically derived from this Lagna. Never replace this Lagna with a sign mentioned elsewhere in the chart or chat.',
     houseTable(parsed.rashi),
-    'VERIFIED EXPLICIT PLANET-HOUSE PLACEMENTS:',
-    ...(rows.length ? rows : ['No unambiguous planet-house placement was extracted. Do not state or infer planet-house placements.']),
-    'The original saved chart prompt remains the source for degrees and nakshatras. Never invent, relocate, or calculate missing planetary details.',
+    'Use only planetary placements explicitly present in the saved chart. Do not invent or relocate planets. If a placement is unclear, say the chart data does not establish it.',
   ].join('\n');
 }
 
@@ -591,16 +449,17 @@ async function handleChat(c, hash, b) {
     throw new HttpError(429, `Aaj ki ${DAILY_LIMIT} messages ki limit poori ho gayi hai 🙏 Kal phir baat kar sakte hain.`);
   }
 
-  // Only earlier customer questions are retained for conversational continuity. Prior AI interpretations are never supplied as facts.
-  const past = await sb(c, `messages?conversation_id=eq.${conv.id}&role=eq.user&select=role,content&order=id.desc&limit=${HISTORY_TURNS}`);
-  const history = (Array.isArray(past) ? past : []).reverse().map(m => ({ role: 'user', content: cleanStr(m.content, 500) }));
+  const past = await sb(c, `messages?conversation_id=eq.${conv.id}&select=role,content&order=id.desc&limit=${HISTORY_TURNS}`);
+  const history = (Array.isArray(past) ? past : []).reverse().map(m => ({
+    role: m.role,
+    content: cleanStr(m.content, 500),
+  }));
+
   const context = conv.chart_summary;
   const chartAnchor = buildVerifiedChartAnchor(context);
   if (!chartAnchor) {
-    throw new HttpError(409, 'Saved chart mein Lagna ya planetary placements ka conflict/ambiguity mila. Galat reading se bachne ke liye prediction rok di gayi hai; chart prompt verify karwayein.');
+    throw new HttpError(409, 'Saved chart mein ek clear, verified Lagna/Ascendant nahi mil raha. Kripya support se chart prompt verify karwayein; abhi prediction rok di gayi hai taaki galat kundli par reading na ho.');
   }
-  const verifiedLagna = extractChartLagna(context).rashi;
-  const verifiedPlacements = parseVerifiedPlanetPlacements(context, verifiedLagna).placements;
   const category = cleanStr(b.category, 80);
   const allowedCategories = ['Career & Finance', 'Marriage & Relationships', 'Spirituality & Enlightenment', 'Karmic Patterns & Life Purpose'];
   if (category && !allowedCategories.includes(category)) {
@@ -618,19 +477,21 @@ async function handleChat(c, hash, b) {
     { role: 'system', content: SYSTEM_PROMPT },
     { role: 'system', content: 'D1 QUESTION-FOCUSED JYOTISH RULES (in supplied prompts ko follow karein; user ke actual sawal ke relevant factors hi analyse karein):\n' + astrologyKnowledge },
     { role: 'system', content: 'KUNDLI DATA (sirf yahi data sach mana jaye):\n' + context },
-    { role: 'system', content: chartAnchor },
     ...history,
+    { role: 'system', content: chartAnchor },
     { role: 'user', content: userContent },
   ];
+  const verifiedLagna = extractChartLagna(context).rashi;
   let modelOutput = await callModel(c, messages);
-  const hasChartMismatch = output => responseHasLagnaConflict(output, verifiedLagna) || responseHasPlanetHouseConflict(output, verifiedPlacements) || responseHasPlanetSignConflict(output, verifiedPlacements);
-  if (hasChartMismatch(modelOutput)) {
+  if (responseHasLagnaConflict(modelOutput, verifiedLagna)) {
     modelOutput = await callModel(c, [
       ...messages.slice(0, -1),
-      { role: 'system', content: 'CORRECTION REQUIRED: Your draft contradicted the verified saved D1 chart. Authoritative Lagna: ' + verifiedLagna + '. Verified planet-house placements: ' + JSON.stringify(verifiedPlacements) + '. Do not state a different Lagna or planet-house placement. Remove unsupported technical claims and answer only from verified chart facts.' },
+      { role: 'system', content: 'CORRECTION REQUIRED: Your previous draft contradicted the verified D1 Lagna. The only authoritative Lagna is ' + verifiedLagna + '. Do not state any other sign as this person\\'s Lagna/Ascendant. Re-evaluate from the saved chart and answer again. If the chart does not support a conclusion, say so.' },
       messages[messages.length - 1],
     ]);
-    if (hasChartMismatch(modelOutput)) throw new HttpError(502, 'Jawab mein saved kundli ke verified data se mismatch mila. Galat reading bhejne ke bajay jawab rok diya gaya hai; kripya dobara koshish karein.');
+    if (responseHasLagnaConflict(modelOutput, verifiedLagna)) {
+      throw new HttpError(502, 'Kundli ke Lagna ko lekar jawab mein mismatch mila, isliye galat reading bhejne ke bajay jawab rok diya gaya hai. Kripya dobara koshish karein.');
+    }
   }
   const parsed = extractSuggestions(modelOutput);
   const text = parsed.text;
@@ -664,8 +525,6 @@ async function handleSaveChartPrompt(c, hash, b) {
   if (!chartLagna.rashi) {
     throw new HttpError(400, 'Chart prompt mein Lagna/Ascendant ki rashi spasht nahi mili. Kripya prompt mein “Lagna: Tula (Libra)” jaise ek clear label ke saath dobara save karein.');
   }
-  const placementCheck = parseVerifiedPlanetPlacements(raw, chartLagna.rashi);
-  if (placementCheck.conflicts.length) throw new HttpError(400, 'Chart prompt mein grah ke bhav/rashi ke beech mismatch mila: ' + placementCheck.conflicts.join('; ') + '. Kripya original D1 chart verify karke dobara save karein.');
   const conv = await ensureConversation(c, hash);
   if (!conv.name) throw new HttpError(409, 'Pehle apna naam batayein, phir Lagan Chart Prompt paste karein.');
   if (typeof conv.chart_summary === 'string' && conv.chart_summary.trim()) {
