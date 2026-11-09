@@ -27,17 +27,32 @@ app.use('/api', (req, res) => {
   res.status(404).json({ error: 'API route not found', path: req.path });
 });
 
-// Serve static assets from project root
-app.use(express.static(__dirname, {
+// Vercel serves files in public/ through its CDN. Keep the local fallback
+// pointed at the same public document for local development.
+const publicDir = path.join(__dirname, 'public');
+app.use(express.static(publicDir, {
   index: 'index.html',
   dotfiles: 'ignore'
 }));
 
-// Fallback to index.html for all page requests (Express 5 compatible)
 app.use((req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Drashta AI server running at http://${HOST}:${PORT}`);
+// Keep unexpected Express errors from leaving the function in an undefined state.
+app.use((err, req, res, next) => {
+  console.error('Express request error:', err);
+  if (res.headersSent) return next(err);
+  return res.status(500).json({ error: 'Internal server error' });
 });
+
+// Vercel imports the default-exported Express app. Start a listener only locally.
+if (!process.env.VERCEL) {
+  app.listen(PORT, HOST, () => {
+    console.log(`Drashta AI server running at http://${HOST}:${PORT}`);
+  });
+}
+
+export default app;
+
+
