@@ -389,7 +389,7 @@ function responseHasPlanetSignConflict(output, placements) {
   for (const [planet, item] of Object.entries(placements || {})) {
     if (!item.sign) continue;
     for (const planetAlias of PLANET_ALIASES[planet] || []) {
-      const p = /^[a-z]+$/i.test(planetAlias) ? '(?:^|[^a-z])' + planetAlias + '(?:$|[^a-z])' : planetAlias;
+      const p = /^[a-z]+$/i.test(planetAlias) ? '(?:^|[^a-z])' + planetAlias : planetAlias;
       for (const [rashi, aliases] of Object.entries(RASHI_ALIASES)) {
         if (rashi === item.sign) continue;
         for (const signAlias of aliases) {
