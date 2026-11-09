@@ -327,7 +327,7 @@ function findPlanets(value) {
 
 function parseVerifiedPlanetPlacements(source, lagna) {
   const text = extractD1Source(source);
-  const pattern = /(?:\b(1[0-2]|[1-9])(?:st|nd|rd|th)?\s*(?:house|bhav)\b|भाव\s*(1[0-2]|[1-9]))\s*(?:(?:mein|me)\b|में)?/gi;
+  const pattern = /(?:\b(1[0-2]|[1-9])(?:st|nd|rd|th)?\s*(?:house|bhav)\b|\b(?:house|bhav)\s*(1[0-2]|[1-9])\b|भाव\s*(1[0-2]|[1-9]))\s*(?:(?:mein|me)\b|में)?/gi;
   const markers = [...text.matchAll(pattern)], placements = {}, conflicts = [];
   for (let i = 0; i < markers.length; i++) {
     const marker = markers[i], house = Number(marker[1] || marker[2] || marker[3]);
